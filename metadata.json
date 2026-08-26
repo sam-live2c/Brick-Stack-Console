@@ -1,0 +1,8 @@
+{
+  "name": "Brick Stack Console",
+  "description": "Retro handheld brick puzzle simulator featuring solo arcade, 1v1 multiplayer battle modes, custom retro skins, and haptic feedback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

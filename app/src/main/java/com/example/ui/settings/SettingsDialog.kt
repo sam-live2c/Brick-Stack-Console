@@ -1,0 +1,735 @@
+package com.example.ui.settings
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.example.data.ActionButtonLayout
+import com.example.data.ActionButtonType
+import com.example.data.HapticIntensity
+import com.example.data.UserSettings
+import com.example.ui.console.ActionButtonsCluster
+import com.example.ui.console.ConsoleSkin
+import com.example.ui.console.PhysicalControllersRow
+import kotlin.math.roundToInt
+
+@Composable
+fun SettingsDialog(
+    currentSettings: UserSettings,
+    onSaveSettings: (UserSettings) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var settings by remember(currentSettings) { mutableStateOf(currentSettings) }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            modifier = Modifier.fillMaxSize(),
+            shape = RectangleShape,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header (Fixed against scroll)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            onSaveSettings(settings)
+                            onDismiss()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "CONSOLE SETTINGS",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Middle Content (Scrollable)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    // 1. GAME SPEED MULTIPLIER & START LEVEL
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "GAME SPEED & START LEVEL",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Falling Speed Multiplier:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val currentSpeedOpt = com.example.data.SpeedOption.fromMultiplier(settings.speedMultiplier)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        com.example.data.SpeedOption.values().toList().chunked(3).forEach { chunk ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                chunk.forEach { opt ->
+                                    val isSelected = currentSpeedOpt == opt
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(speedMultiplier = opt.multiplier)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                                        )
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                opt.label,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                opt.scoreModifierLabel,
+                                                fontSize = 8.sp,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Starting Level: LEVEL ${settings.startLevel}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Slider(
+                        value = settings.startLevel.toFloat(),
+                        onValueChange = {
+                            val newS = settings.copy(startLevel = it.roundToInt())
+                            settings = newS
+                            onSaveSettings(newS)
+                        },
+                        valueRange = 1f..10f,
+                        steps = 8,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val presets = listOf(
+                            "EASY" to 1,
+                            "NORMAL" to 3,
+                            "HARD" to 6,
+                            "INSANE" to 9
+                        )
+                        presets.forEach { (label, lvl) ->
+                            TextButton(
+                                onClick = {
+                                    val newS = settings.copy(startLevel = lvl)
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    containerColor = if (settings.startLevel == lvl) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                )
+                            ) {
+                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+                    // 2. CONSOLE SKIN SELECTOR
+                    Text(
+                        text = "CONSOLES & THEMES",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ConsoleSkin.ALL_SKINS.forEach { skin ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (settings.themeIndex == skin.id) MaterialTheme.colorScheme.primaryContainer
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                    .clickable {
+                                        val newS = settings.copy(themeIndex = skin.id)
+                                        settings = newS
+                                        onSaveSettings(newS)
+                                    }
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .background(skin.bodyColor)
+                                        .border(1.dp, Color.Black.copy(alpha = 0.3f), CircleShape)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = skin.name,
+                                    fontWeight = if (settings.themeIndex == skin.id) FontWeight.Bold else FontWeight.Normal,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (settings.themeIndex == skin.id) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text("SELECTED", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+                    // 3. HAPTIC FEEDBACK SETTING
+                    Text(
+                        text = "HAPTIC FEEDBACK INTENSITY",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        HapticIntensity.values().forEach { intensity ->
+                            TextButton(
+                                onClick = {
+                                    val newS = settings.copy(hapticIntensity = intensity)
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    containerColor = if (settings.hapticIntensity == intensity) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                )
+                            ) {
+                                Text(intensity.name, fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+
+                    // 4. TOUCH CONTROLS & LAYOUT
+                    Text(
+                        text = "TOUCH CONTROLS & VIRTUAL BUTTONS",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    SettingSwitchRow(
+                        title = "Virtual Hardware Buttons",
+                        subtitle = "Show D-Pad and circular buttons on console",
+                        checked = settings.virtualButtonsEnabled,
+                        onCheckedChange = {
+                            val newS = settings.copy(virtualButtonsEnabled = it)
+                            settings = newS
+                            onSaveSettings(newS)
+                        }
+                    )
+
+                    if (settings.virtualButtonsEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // A. BUTTON SIZE / SCALE CONTROL
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "Button Size (Scale: ${(settings.buttonScale * 100).roundToInt()}%)",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "Adjust overall size of D-Pad and action buttons",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = settings.buttonScale,
+                                onValueChange = { scale ->
+                                    val newS = settings.copy(buttonScale = (scale * 20).roundToInt() / 20f)
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                valueRange = 0.7f..1.4f,
+                                steps = 13,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf("85%" to 0.85f, "100%" to 1.0f, "115%" to 1.15f, "130%" to 1.30f).forEach { (label, scaleVal) ->
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(buttonScale = scaleVal)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (kotlin.math.abs(settings.buttonScale - scaleVal) < 0.04f) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text(label, fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // B. CONTROLLER POSITION CONTROL (ORIENTATION & VERTICAL OFFSET)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "Controller Position & Layout",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "Customize D-Pad side and vertical positioning on console",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Hand orientation switch
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Hand Mode", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                Row {
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(leftHandedMode = false)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (!settings.leftHandedMode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text("Left D-Pad", fontSize = 10.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(leftHandedMode = true)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (settings.leftHandedMode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text("Right D-Pad", fontSize = 10.sp)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Vertical Offset slider
+                            Text(
+                                text = "Vertical Offset (${if (settings.controllerVerticalOffset >= 0) "+${settings.controllerVerticalOffset}" else settings.controllerVerticalOffset} dp)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Slider(
+                                value = settings.controllerVerticalOffset.toFloat(),
+                                onValueChange = { offsetVal ->
+                                    val newS = settings.copy(controllerVerticalOffset = offsetVal.roundToInt())
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                valueRange = -25f..35f,
+                                steps = 11,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf("Low (-15)" to -15, "Center (0)" to 0, "High (+15)" to 15, "Top (+30)" to 30).forEach { (label, offsetVal) ->
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(controllerVerticalOffset = offsetVal)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (settings.controllerVerticalOffset == offsetVal) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text(label, fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // C. 4 CONTROL BUTTONS POSITION & MAPPING CONTROL
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "4 Control Buttons Position & Layout",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "Customize position and action assignments for all 4 control buttons",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 1. Layout Shape Pattern
+                            Text("Layout Shape", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                ActionButtonLayout.values().forEach { layout ->
+                                    val isSelected = settings.actionButtonLayout == layout
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(actionButtonLayout = layout)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text(layout.label, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, maxLines = 1)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 2. Position Presets
+                            Text("Quick Position Presets", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                val presets = listOf(
+                                    "Default" to Quadruple(ActionButtonType.HOLD, ActionButtonType.HARD_DROP, ActionButtonType.ROTATE_LEFT, ActionButtonType.ROTATE_RIGHT),
+                                    "Classic" to Quadruple(ActionButtonType.ROTATE_RIGHT, ActionButtonType.ROTATE_LEFT, ActionButtonType.HARD_DROP, ActionButtonType.HOLD),
+                                    "Rotate Top" to Quadruple(ActionButtonType.ROTATE_LEFT, ActionButtonType.ROTATE_RIGHT, ActionButtonType.HOLD, ActionButtonType.HARD_DROP),
+                                    "Drop Top" to Quadruple(ActionButtonType.HARD_DROP, ActionButtonType.HOLD, ActionButtonType.ROTATE_LEFT, ActionButtonType.ROTATE_RIGHT)
+                                )
+                                presets.forEach { (label, quad) ->
+                                    val isMatch = settings.button1Action == quad.first &&
+                                            settings.button2Action == quad.second &&
+                                            settings.button3Action == quad.third &&
+                                            settings.button4Action == quad.fourth
+                                    TextButton(
+                                        onClick = {
+                                            val newS = settings.copy(
+                                                button1Action = quad.first,
+                                                button2Action = quad.second,
+                                                button3Action = quad.third,
+                                                button4Action = quad.fourth
+                                            )
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        colors = ButtonDefaults.textButtonColors(
+                                            containerColor = if (isMatch) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                        )
+                                    ) {
+                                        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 3. Custom Position Remapping
+                            Text("Custom Button Positions (Remap Slots)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            val slotLabels = when (settings.actionButtonLayout) {
+                                ActionButtonLayout.GRID_2X2 -> listOf("Top-Left (Slot 1)", "Top-Right (Slot 2)", "Bottom-Left (Slot 3)", "Bottom-Right (Slot 4)")
+                                ActionButtonLayout.DIAMOND -> listOf("Top (Slot 1)", "Right (Slot 2)", "Bottom (Slot 3)", "Left (Slot 4)")
+                                ActionButtonLayout.LINE_ROW -> listOf("Pos 1 (Left)", "Pos 2 (Mid-Left)", "Pos 3 (Mid-Right)", "Pos 4 (Right)")
+                            }
+
+                            val currentActions = listOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
+
+                            slotLabels.forEachIndexed { index, slotName ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 3.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(slotName, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1.1f))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        ActionButtonType.values().forEach { action ->
+                                            val isSelected = currentActions[index] == action
+                                            TextButton(
+                                                onClick = {
+                                                    val list = mutableListOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
+                                                    val oldAction = list[index]
+                                                    if (oldAction != action) {
+                                                        val dupIdx = list.indexOf(action)
+                                                        if (dupIdx != -1) {
+                                                            list[dupIdx] = oldAction
+                                                        }
+                                                        list[index] = action
+                                                        val newS = settings.copy(
+                                                            button1Action = list[0],
+                                                            button2Action = list[1],
+                                                            button3Action = list[2],
+                                                            button4Action = list[3]
+                                                        )
+                                                        settings = newS
+                                                        onSaveSettings(newS)
+                                                    }
+                                                },
+                                                colors = ButtonDefaults.textButtonColors(
+                                                    containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                                                ),
+                                                modifier = Modifier.height(28.dp)
+                                            ) {
+                                                Text(
+                                                    text = action.shortLabel,
+                                                    fontSize = 8.sp,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 4. Live Mini Preview
+                            Text("Live Layout Preview", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(ConsoleSkin.getById(settings.themeIndex).bezelColor)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                PhysicalControllersRow(
+                                    onMoveLeft = {},
+                                    onMoveRight = {},
+                                    onSoftDrop = {},
+                                    onHardDrop = {},
+                                    onRotateClockwise = {},
+                                    onRotateCounterClockwise = {},
+                                    onHoldPiece = {},
+                                    leftHandedMode = settings.leftHandedMode,
+                                    buttonScale = settings.buttonScale,
+                                    verticalOffset = 0,
+                                    userSettings = settings,
+                                    skin = ConsoleSkin.getById(settings.themeIndex)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    SettingSwitchRow(
+                        title = "Screen Touch Gestures",
+                        subtitle = "Drag & tap directly on LCD screen",
+                        checked = settings.gestureControlEnabled,
+                        onCheckedChange = {
+                            val newS = settings.copy(gestureControlEnabled = it)
+                            settings = newS
+                            onSaveSettings(newS)
+                        }
+                    )
+
+                    SettingSwitchRow(
+                        title = "Ghost Piece Projection",
+                        subtitle = "Show landing outline",
+                        checked = settings.ghostPieceEnabled,
+                        onCheckedChange = {
+                            val newS = settings.copy(ghostPieceEnabled = it)
+                            settings = newS
+                            onSaveSettings(newS)
+                        }
+                    )
+
+                    SettingSwitchRow(
+                        title = "Sound Effects",
+                        subtitle = "Retro beep tones",
+                        checked = settings.soundEnabled,
+                        onCheckedChange = {
+                            val newS = settings.copy(soundEnabled = it)
+                            settings = newS
+                            onSaveSettings(newS)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingSwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            Text(text = subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
