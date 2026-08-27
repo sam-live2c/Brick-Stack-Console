@@ -68,6 +68,7 @@ data class UserSettings(
     val arrMs: Long = 40L,
     val startLevel: Int = 1,
     val speedMultiplier: Float = 1.0f,
+    val maxUnlockedLevel: Int = 1,
     // Granular Button Visibility Toggles
     val showDpadUp: Boolean = true,
     val showDpadDown: Boolean = true,
@@ -114,6 +115,7 @@ class SettingsRepository(context: Context) {
             arrMs = prefs.getLong("arrMs", 40L),
             startLevel = prefs.getInt("startLevel", 1),
             speedMultiplier = prefs.getFloat("speedMultiplier", 1.0f),
+            maxUnlockedLevel = prefs.getInt("maxUnlockedLevel", 1),
             showDpadUp = prefs.getBoolean("showDpadUp", true),
             showDpadDown = prefs.getBoolean("showDpadDown", true),
             showDpadLeft = prefs.getBoolean("showDpadLeft", true),
@@ -153,6 +155,7 @@ class SettingsRepository(context: Context) {
             .putLong("arrMs", settings.arrMs)
             .putInt("startLevel", settings.startLevel)
             .putFloat("speedMultiplier", settings.speedMultiplier)
+            .putInt("maxUnlockedLevel", settings.maxUnlockedLevel)
             .putBoolean("showDpadUp", settings.showDpadUp)
             .putBoolean("showDpadDown", settings.showDpadDown)
             .putBoolean("showDpadLeft", settings.showDpadLeft)

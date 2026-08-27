@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -62,6 +63,9 @@ fun HandheldConsoleFrame(
     onOpenSettings: () -> Unit,
     onOpenHighScores: () -> Unit,
     onGoHome: () -> Unit,
+    onLevelClick: (() -> Unit)? = null,
+    onReplayLevel: (() -> Unit)? = null,
+    onNextLevel: (() -> Unit)? = null,
     multiplayerModeTitle: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -98,6 +102,7 @@ fun HandheldConsoleFrame(
                     skin = skin,
                     onOpenHighScores = onOpenHighScores,
                     onGoHome = onGoHome,
+                    onLevelClick = onLevelClick,
                     multiplayerModeTitle = multiplayerModeTitle
                 )
 
@@ -114,20 +119,25 @@ fun HandheldConsoleFrame(
                         gameState = gameState,
                         skin = skin,
                         ghostEnabled = userSettings.ghostPieceEnabled,
+                        onLevelClick = onLevelClick,
+                        onReplayLevel = onReplayLevel,
+                        onNextLevel = onNextLevel,
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // Direct Touch Gestures on Screen area
-                    TouchGestureOverlay(
-                        enabled = userSettings.gestureControlEnabled,
-                        onMoveLeft = onMoveLeft,
-                        onMoveRight = onMoveRight,
-                        onSoftDrop = onSoftDrop,
-                        onHardDrop = onHardDrop,
-                        onRotateClockwise = onRotateClockwise,
-                        onHoldPiece = onHoldPiece,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    // Direct Touch Gestures on Screen area (ONLY active during PLAYING)
+                    if (gameState.status == GameStatus.PLAYING) {
+                        TouchGestureOverlay(
+                            enabled = userSettings.gestureControlEnabled,
+                            onMoveLeft = onMoveLeft,
+                            onMoveRight = onMoveRight,
+                            onSoftDrop = onSoftDrop,
+                            onHardDrop = onHardDrop,
+                            onRotateClockwise = onRotateClockwise,
+                            onHoldPiece = onHoldPiece,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -183,6 +193,7 @@ private fun BrandHeader(
     skin: ConsoleSkin,
     onOpenHighScores: () -> Unit,
     onGoHome: () -> Unit,
+    onLevelClick: (() -> Unit)?,
     multiplayerModeTitle: String?
 ) {
     Row(
@@ -190,18 +201,18 @@ private fun BrandHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left balancing spacer
-        Spacer(modifier = Modifier.width(52.dp))
+        // Left spacer
+        Spacer(modifier = Modifier.width(4.dp))
 
         // Title Branding Text
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = multiplayerModeTitle ?: "BRICK STACK",
                 color = skin.brandTextColor,
-                fontSize = if (multiplayerModeTitle != null) 14.sp else 20.sp,
+                fontSize = if (multiplayerModeTitle != null) 14.sp else 18.sp,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace,
-                letterSpacing = 2.sp
+                letterSpacing = 1.5.sp
             )
             Text(
                 text = if (multiplayerModeTitle != null) "MATCH ROOM #BRICK-8842" else "SINGLE PLAYER ARCADE",
@@ -212,31 +223,66 @@ private fun BrandHeader(
             )
         }
 
-        // Score Button (with SVG Icon)
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(skin.bezelColor.copy(alpha = 0.3f))
-                .border(1.dp, skin.brandTextColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
-                .clickable(onClick = onOpenHighScores)
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-            contentAlignment = Alignment.Center
+        // Top Right Corner Buttons (LEVEL & SCORE)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = "Score",
-                    tint = skin.brandTextColor,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Text(
-                    text = "SCORE",
-                    color = skin.brandTextColor,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
+            if (onLevelClick != null) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(skin.lcdBackground)
+                        .border(1.5.dp, skin.screenBorderColor, RoundedCornerShape(6.dp))
+                        .clickable(onClick = onLevelClick)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Layers,
+                            contentDescription = "Level",
+                            tint = skin.activePixelColor,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "LEVEL",
+                            color = skin.activePixelColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+
+            // Score Button (with SVG Icon)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(skin.lcdBackground)
+                    .border(1.5.dp, skin.screenBorderColor, RoundedCornerShape(6.dp))
+                    .clickable(onClick = onOpenHighScores)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = "Score",
+                        tint = skin.activePixelColor,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "SCORE",
+                        color = skin.activePixelColor,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
             }
         }
     }

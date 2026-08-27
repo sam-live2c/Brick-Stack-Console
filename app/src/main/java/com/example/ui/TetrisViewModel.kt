@@ -119,6 +119,16 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
         startGame(gameMode = mode)
     }
 
+    fun selectLevel(targetLevel: Int) {
+        val currentMax = _userSettings.value.maxUnlockedLevel
+        val validLevel = targetLevel.coerceIn(1, currentMax.coerceAtLeast(1))
+        val updatedSettings = _userSettings.value.copy(startLevel = validLevel)
+        _userSettings.value = updatedSettings
+        settingsRepo.saveSettings(updatedSettings)
+        audioSynthesizer.playSound(SoundEffectEvent.BUTTON_CLICK)
+        hapticEngine.trigger(HapticEffectEvent.BUTTON_CLICK)
+    }
+
     fun dismissLevelUpBanner() {
         engine.hideLevelUpBanner()
         _gameState.value = engine.state
@@ -134,6 +144,30 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun replayCurrentLevel() {
+        val currentLevel = _gameState.value.level
+        startGame(startLevel = currentLevel)
+        audioSynthesizer.playSound(SoundEffectEvent.BUTTON_CLICK)
+        hapticEngine.trigger(HapticEffectEvent.BUTTON_CLICK)
+    }
+
+    fun nextLevel() {
+        val currentLvl = _gameState.value.level
+        val (nextLvl, maxUnlocked) = if (currentLvl >= 1000) {
+            Pair(1, 1000)
+        } else {
+            val targetNext = currentLvl + 1
+            Pair(targetNext, (_userSettings.value.maxUnlockedLevel).coerceAtLeast(targetNext).coerceAtMost(1000))
+        }
+
+        val updatedSettings = _userSettings.value.copy(startLevel = nextLvl, maxUnlockedLevel = maxUnlocked)
+        _userSettings.value = updatedSettings
+        settingsRepo.saveSettings(updatedSettings)
+        startGame(startLevel = nextLvl)
+        audioSynthesizer.playSound(SoundEffectEvent.BUTTON_CLICK)
+        hapticEngine.trigger(HapticEffectEvent.BUTTON_CLICK)
+    }
+
     fun resetGame() {
         stopTickTimer()
         engine.resetGame(
@@ -147,12 +181,20 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
 
     // Controls
     fun moveLeft(composeHaptic: HapticFeedback? = null) {
+        if (_gameState.value.status == GameStatus.VICTORY) {
+            replayCurrentLevel()
+            return
+        }
         if (_gameState.value.status != GameStatus.PLAYING) return
         engine.moveLeft()
         _gameState.value = engine.state
     }
 
     fun moveRight(composeHaptic: HapticFeedback? = null) {
+        if (_gameState.value.status == GameStatus.VICTORY) {
+            nextLevel()
+            return
+        }
         if (_gameState.value.status != GameStatus.PLAYING) return
         engine.moveRight()
         _gameState.value = engine.state
@@ -166,6 +208,10 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun hardDrop(composeHaptic: HapticFeedback? = null) {
+        if (_gameState.value.status == GameStatus.VICTORY) {
+            nextLevel()
+            return
+        }
         if (_gameState.value.status != GameStatus.PLAYING) return
         engine.hardDrop()
         _gameState.value = engine.state
@@ -173,6 +219,10 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun rotateClockwise(composeHaptic: HapticFeedback? = null) {
+        if (_gameState.value.status == GameStatus.VICTORY) {
+            nextLevel()
+            return
+        }
         if (_gameState.value.status != GameStatus.PLAYING) return
         engine.rotateClockwise()
         _gameState.value = engine.state
@@ -231,6 +281,7 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun checkGameEnd() {
+        evaluateLevelProgress()
         val st = engine.state.status
         if (st == GameStatus.GAME_OVER || st == GameStatus.VICTORY || st == GameStatus.TIMES_UP) {
             stopTickTimer()
@@ -248,6 +299,24 @@ class TetrisViewModel(application: Application) : AndroidViewModel(application) 
                     )
                 }
             }
+        }
+    }
+
+    private fun evaluateLevelProgress() {
+        val currentLevel = engine.state.level
+        val isVictory = engine.state.status == GameStatus.VICTORY
+        var settings = _userSettings.value
+
+        val newMaxUnlocked = when {
+            isVictory && currentLevel >= 1000 -> 1000
+            currentLevel > settings.maxUnlockedLevel -> currentLevel.coerceAtMost(1000)
+            else -> settings.maxUnlockedLevel
+        }
+
+        if (newMaxUnlocked != settings.maxUnlockedLevel) {
+            val updatedSettings = settings.copy(maxUnlockedLevel = newMaxUnlocked)
+            _userSettings.value = updatedSettings
+            settingsRepo.saveSettings(updatedSettings)
         }
     }
 

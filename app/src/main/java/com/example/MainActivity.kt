@@ -26,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.game.GameStatus
 import com.example.ui.TetrisViewModel
 import com.example.ui.console.HandheldConsoleFrame
+import com.example.ui.console.LevelSelectDialog
 import com.example.ui.history.HighScoresDialog
 import com.example.ui.settings.SettingsDialog
 import com.example.ui.settings.SettingsScreen
@@ -80,6 +81,7 @@ fun BrickConsoleApp(
 
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showHighScoresDialog by remember { mutableStateOf(false) }
+    var showLevelSelectDialog by remember { mutableStateOf(false) }
 
     val composeHaptic = LocalHapticFeedback.current
 
@@ -124,6 +126,14 @@ fun BrickConsoleApp(
                     showHighScoresDialog = true
                 },
                 onGoHome = { viewModel.resetGame() },
+                onLevelClick = {
+                    if (gameState.status == GameStatus.PLAYING) {
+                        viewModel.togglePause()
+                    }
+                    showLevelSelectDialog = true
+                },
+                onReplayLevel = { viewModel.replayCurrentLevel() },
+                onNextLevel = { viewModel.nextLevel() },
                 multiplayerModeTitle = null,
                 modifier = Modifier.fillMaxSize()
             )
@@ -134,6 +144,19 @@ fun BrickConsoleApp(
                 highScores = highScores,
                 onClearScores = { viewModel.clearHighScores() },
                 onDismiss = { showHighScoresDialog = false }
+            )
+        }
+
+        if (showLevelSelectDialog) {
+            LevelSelectDialog(
+                currentStartLevel = userSettings.startLevel,
+                maxUnlockedLevel = userSettings.maxUnlockedLevel,
+                skin = skin,
+                onLevelSelected = { selectedLvl ->
+                    viewModel.selectLevel(selectedLvl)
+                    showLevelSelectDialog = false
+                },
+                onDismiss = { showLevelSelectDialog = false }
             )
         }
     }

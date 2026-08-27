@@ -44,7 +44,7 @@ class TetrisEngine(
     ) {
         clearGrid()
         bag.clear()
-        this.startLevel = startLevel.coerceIn(1, 10)
+        this.startLevel = startLevel.coerceIn(1, 1000)
         this.gameMode = gameMode
         this.speedMultiplier = speedMultiplier
         level = this.startLevel
@@ -328,7 +328,7 @@ class TetrisEngine(
         linesCleared += clearedCount
 
         // Check Level Up every 10 lines relative to start level
-        val newLevel = (startLevel + linesCleared / 10).coerceAtMost(10)
+        val newLevel = (startLevel + linesCleared / 10).coerceAtMost(1000)
         if (newLevel > level) {
             level = newLevel
             isLevelUpBannerVisible = true
@@ -461,19 +461,15 @@ class TetrisEngine(
 
     // Get drop interval in milliseconds adjusted by user speed multiplier
     fun getDropIntervalMs(): Long {
-        val baseMs = when (level) {
-            1 -> 800L
-            2 -> 720L
-            3 -> 640L
-            4 -> 550L
-            5 -> 460L
-            6 -> 370L
-            7 -> 290L
-            8 -> 210L
-            9 -> 150L
-            10 -> 110L
-            else -> 100L
+        val lvl = level.coerceIn(1, 1000)
+        val baseMs = when {
+            lvl == 1 -> 800L
+            lvl in 2..10 -> (800L - (lvl - 1) * 70L) // Level 10 is 170ms
+            lvl in 11..50 -> (170L - (lvl - 10) * 2L).coerceAtLeast(70L) // Level 50 is 90ms
+            lvl in 51..100 -> (90L - (lvl - 50) / 2L).coerceAtLeast(65L) // Level 100 is 65ms
+            lvl in 101..500 -> (65L - (lvl - 100) / 20L).coerceAtLeast(45L) // Level 500 is 45ms
+            else -> (45L - (lvl - 500) / 50L).coerceAtLeast(30L) // Level 1000 is 35ms
         }
-        return (baseMs / speedMultiplier.coerceAtLeast(0.1f)).toLong().coerceAtLeast(30L)
+        return (baseMs / speedMultiplier.coerceAtLeast(0.1f)).toLong().coerceAtLeast(20L)
     }
 }

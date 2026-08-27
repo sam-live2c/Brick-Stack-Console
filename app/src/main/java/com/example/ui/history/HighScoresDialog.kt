@@ -11,10 +11,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,35 +50,44 @@ fun HighScoresDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = "-score",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.EmojiEvents,
+                        contentDescription = "Trophy",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "HIGH SCORES",
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 if (highScores.isEmpty()) {
                     Text(
-                        text = "No scores yet.",
+                        text = "No scores logged yet. Clear lines to score points!",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                        modifier = Modifier.padding(vertical = 24.dp)
                     )
                 } else {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp),
+                            .height(240.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         itemsIndexed(highScores) { index, item ->
@@ -84,20 +99,51 @@ fun HighScoresDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "#${index + 1}",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = if (index == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                    )
+                                    if (index == 0) {
+                                        Icon(
+                                            imageVector = Icons.Default.EmojiEvents,
+                                            contentDescription = "Gold Medal",
+                                            tint = androidx.compose.ui.graphics.Color(0xFFFFD700),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    } else if (index == 1) {
+                                        Icon(
+                                            imageVector = Icons.Default.WorkspacePremium,
+                                            contentDescription = "Silver Medal",
+                                            tint = androidx.compose.ui.graphics.Color(0xFFC0C0C0),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    } else if (index == 2) {
+                                        Icon(
+                                            imageVector = Icons.Default.MilitaryTech,
+                                            contentDescription = "Bronze Medal",
+                                            tint = androidx.compose.ui.graphics.Color(0xFFCD7F32),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = "#${index + 1}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            fontFamily = FontFamily.Monospace,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                     Spacer(modifier = Modifier.width(10.dp))
-                                    Text(
-                                        text = "${item.score} PTS",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        fontFamily = FontFamily.Monospace
-                                    )
+                                    Column {
+                                        Text(
+                                            text = "${item.score} PTS",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                        Text(
+                                            text = "LVL ${item.level} • ${item.lines} lines",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
                                 }
                                 Text(
                                     text = dateFormat.format(Date(item.timestamp)),

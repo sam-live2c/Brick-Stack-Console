@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,6 +27,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Celebration
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +75,9 @@ fun LcdScreen(
     gameState: TetrisGameState,
     skin: ConsoleSkin,
     ghostEnabled: Boolean,
+    onLevelClick: (() -> Unit)? = null,
+    onReplayLevel: (() -> Unit)? = null,
+    onNextLevel: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -133,13 +144,32 @@ fun LcdScreen(
                                 .padding(horizontal = 4.dp, vertical = 2.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "★ LEVEL UP! LVL ${gameState.level} ★",
-                                color = skin.lcdBackground,
-                                fontSize = subFontSize,
-                                fontWeight = FontWeight.ExtraBold,
-                                fontFamily = FontFamily.Monospace
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = skin.lcdBackground,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "LEVEL UP! LVL ${gameState.level}",
+                                    color = skin.lcdBackground,
+                                    fontSize = subFontSize,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontFamily = FontFamily.Monospace
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = skin.lcdBackground,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
 
@@ -162,49 +192,157 @@ fun LcdScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(skin.lcdBackground.copy(alpha = 0.92f)),
+                                .background(skin.lcdBackground.copy(alpha = 0.95f)),
                             contentAlignment = Alignment.Center
                         ) {
+                            val isLevel1000Completed = gameState.level >= 1000
+
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(6.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
                             ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (isLevel1000Completed) Icons.Default.Celebration else Icons.Default.EmojiEvents,
+                                        contentDescription = null,
+                                        tint = skin.activePixelColor,
+                                        modifier = Modifier.size((matrixWidth.value * 0.12f).coerceIn(16f, 22f).dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = if (isLevel1000Completed) "CONGRATS!" else "VICTORY!",
+                                        color = skin.activePixelColor,
+                                        fontSize = (matrixWidth.value * (if (isLevel1000Completed) 0.11f else 0.12f)).coerceIn(14f, 20f).sp,
+                                        fontWeight = FontWeight.Black,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "🏆 VICTORY!",
-                                    color = skin.activePixelColor,
-                                    fontSize = overlayFontSize,
+                                    text = if (isLevel1000Completed) "ALL 1000 LEVELS CLEARED!" else "STAGE CLEARED",
+                                    color = skin.activePixelColor.copy(alpha = 0.85f),
+                                    fontSize = (matrixWidth.value * 0.065f).coerceIn(8f, 11f).sp,
                                     fontWeight = FontWeight.Bold,
                                     fontFamily = FontFamily.Monospace
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "STAGE CLEARED",
-                                    color = skin.activePixelColor.copy(alpha = 0.8f),
-                                    fontSize = tinyFontSize,
-                                    fontFamily = FontFamily.Monospace
-                                )
+
                                 Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = "LINES: ${gameState.linesCleared}",
-                                    color = skin.activePixelColor,
-                                    fontSize = tinyFontSize,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "WIN SCORE: ${gameState.finalCalculatedScore}",
-                                    color = skin.activePixelColor,
-                                    fontSize = subFontSize,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontFamily = FontFamily.Monospace
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = "PRESS RESET / START",
-                                    color = skin.activePixelColor.copy(alpha = 0.7f),
-                                    fontSize = tinyFontSize,
-                                    fontFamily = FontFamily.Monospace
-                                )
+
+                                // Stats summary box
+                                Row(
+                                    horizontalArrangement = Arrangement.SpaceEvenly,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = skin.activePixelColor.copy(alpha = 0.1f),
+                                            shape = RoundedCornerShape(6.dp)
+                                        )
+                                        .padding(vertical = 4.dp, horizontal = 6.dp)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "SCORE",
+                                            color = skin.activePixelColor.copy(alpha = 0.7f),
+                                            fontSize = 8.sp,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                        Text(
+                                            text = "${gameState.finalCalculatedScore}",
+                                            color = skin.activePixelColor,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "LINES",
+                                            color = skin.activePixelColor.copy(alpha = 0.7f),
+                                            fontSize = 8.sp,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                        Text(
+                                            text = "${gameState.linesCleared}",
+                                            color = skin.activePixelColor,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                // Interactive Action Buttons: REPLAY and NEXT LEVEL (or LEVEL 1 for 1000)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // REPLAY BUTTON
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(skin.activePixelColor.copy(alpha = 0.15f))
+                                            .border(
+                                                width = 1.5.dp,
+                                                color = skin.activePixelColor,
+                                                shape = RoundedCornerShape(6.dp)
+                                            )
+                                            .clickable { onReplayLevel?.invoke() }
+                                            .padding(vertical = 6.dp, horizontal = 2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "◀ REPLAY",
+                                                color = skin.activePixelColor,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                            Text(
+                                                text = "(D-Pad ◄)",
+                                                color = skin.activePixelColor.copy(alpha = 0.65f),
+                                                fontSize = 7.5.sp,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        }
+                                    }
+
+                                    // NEXT LEVEL / LEVEL 1 BUTTON
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(skin.activePixelColor)
+                                            .clickable { onNextLevel?.invoke() }
+                                            .padding(vertical = 6.dp, horizontal = 2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = if (isLevel1000Completed) "LEVEL 1 ▶" else "NEXT ▶",
+                                                color = skin.lcdBackground,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Black,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                            Text(
+                                                text = if (isLevel1000Completed) "(All Unlocked)" else "(D-Pad ►)",
+                                                color = skin.lcdBackground.copy(alpha = 0.85f),
+                                                fontSize = 7.5.sp,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else if (gameState.status == GameStatus.TIMES_UP) {
@@ -218,13 +356,25 @@ fun LcdScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(6.dp)
                             ) {
-                                Text(
-                                    text = "⏱ TIME'S UP!",
-                                    color = skin.activePixelColor,
-                                    fontSize = overlayFontSize,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Monospace
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Timer,
+                                        contentDescription = null,
+                                        tint = skin.activePixelColor,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "TIME'S UP!",
+                                        color = skin.activePixelColor,
+                                        fontSize = overlayFontSize,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Text(
                                     text = "SCORE: ${gameState.finalCalculatedScore}",
@@ -353,7 +503,6 @@ fun LcdScreen(
                             .fillMaxWidth()
                             .weight(2.4f)
                     ) {
-                        val totalMult = gameState.speedMultiplier * (1.0f + (gameState.level - 1) * 0.15f)
                         val displaySec = if (gameState.gameMode == com.example.game.GameMode.ULTRA_2MIN) gameState.timeRemainingSeconds else gameState.elapsedTimeSeconds
 
                         Column(
@@ -379,14 +528,8 @@ fun LcdScreen(
                                 value = "L%02d".format(gameState.level),
                                 skin = skin,
                                 sidebarWidth = sidebarWidth,
-                                level = gameState.level
-                            )
-                            StatDisplay(
-                                label = "MULT",
-                                value = "${"%.2f".format(totalMult)}x",
-                                skin = skin,
-                                sidebarWidth = sidebarWidth,
-                                level = gameState.level
+                                level = gameState.level,
+                                onClick = onLevelClick
                             )
                             StatDisplay(
                                 label = "TIME",
@@ -448,7 +591,8 @@ private fun StatDisplay(
     value: String,
     skin: ConsoleSkin,
     sidebarWidth: Dp = 80.dp,
-    level: Int = 1
+    level: Int = 1,
+    onClick: (() -> Unit)? = null
 ) {
     val scaleAnim = remember { Animatable(1.0f) }
     var prevLevel by remember { mutableStateOf(level) }
@@ -470,6 +614,9 @@ private fun StatDisplay(
         horizontalAlignment = Alignment.Start,
         modifier = Modifier
             .fillMaxWidth()
+            .then(
+                if (onClick != null) Modifier.clickable { onClick() } else Modifier
+            )
             .graphicsLayer {
                 scaleX = scaleAnim.value
                 scaleY = scaleAnim.value
