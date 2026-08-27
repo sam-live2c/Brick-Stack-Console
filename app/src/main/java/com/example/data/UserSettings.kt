@@ -9,7 +9,7 @@ enum class HapticIntensity {
 
 enum class ActionButtonLayout(val label: String) {
     GRID_2X2("2x2 Grid"),
-    DIAMOND("Diamond Cross"),
+    DIAMOND("Diamond (3 Buttons)"),
     LINE_ROW("Linear Row")
 }
 
@@ -63,7 +63,20 @@ data class UserSettings(
     val dasMs: Long = 160L,
     val arrMs: Long = 40L,
     val startLevel: Int = 1,
-    val speedMultiplier: Float = 1.0f
+    val speedMultiplier: Float = 1.0f,
+    // Granular Button Visibility Toggles
+    val showDpadUp: Boolean = true,
+    val showDpadDown: Boolean = true,
+    val showDpadLeft: Boolean = true,
+    val showDpadRight: Boolean = true,
+    val showActionButton1: Boolean = true,
+    val showActionButton2: Boolean = true,
+    val showActionButton3: Boolean = true,
+    val showActionButton4: Boolean = true,
+    val showSystemPause: Boolean = true,
+    val showSystemReset: Boolean = true,
+    val showSystemSound: Boolean = true,
+    val showSystemOption: Boolean = true
 )
 
 class SettingsRepository(context: Context) {
@@ -92,7 +105,19 @@ class SettingsRepository(context: Context) {
             dasMs = prefs.getLong("dasMs", 160L),
             arrMs = prefs.getLong("arrMs", 40L),
             startLevel = prefs.getInt("startLevel", 1),
-            speedMultiplier = prefs.getFloat("speedMultiplier", 1.0f)
+            speedMultiplier = prefs.getFloat("speedMultiplier", 1.0f),
+            showDpadUp = prefs.getBoolean("showDpadUp", true),
+            showDpadDown = prefs.getBoolean("showDpadDown", true),
+            showDpadLeft = prefs.getBoolean("showDpadLeft", true),
+            showDpadRight = prefs.getBoolean("showDpadRight", true),
+            showActionButton1 = prefs.getBoolean("showActionButton1", true),
+            showActionButton2 = prefs.getBoolean("showActionButton2", true),
+            showActionButton3 = prefs.getBoolean("showActionButton3", true),
+            showActionButton4 = prefs.getBoolean("showActionButton4", true),
+            showSystemPause = prefs.getBoolean("showSystemPause", true),
+            showSystemReset = prefs.getBoolean("showSystemReset", true),
+            showSystemSound = prefs.getBoolean("showSystemSound", true),
+            showSystemOption = prefs.getBoolean("showSystemOption", true)
         )
     }
 
@@ -116,6 +141,18 @@ class SettingsRepository(context: Context) {
             .putLong("arrMs", settings.arrMs)
             .putInt("startLevel", settings.startLevel)
             .putFloat("speedMultiplier", settings.speedMultiplier)
+            .putBoolean("showDpadUp", settings.showDpadUp)
+            .putBoolean("showDpadDown", settings.showDpadDown)
+            .putBoolean("showDpadLeft", settings.showDpadLeft)
+            .putBoolean("showDpadRight", settings.showDpadRight)
+            .putBoolean("showActionButton1", settings.showActionButton1)
+            .putBoolean("showActionButton2", settings.showActionButton2)
+            .putBoolean("showActionButton3", settings.showActionButton3)
+            .putBoolean("showActionButton4", settings.showActionButton4)
+            .putBoolean("showSystemPause", settings.showSystemPause)
+            .putBoolean("showSystemReset", settings.showSystemReset)
+            .putBoolean("showSystemSound", settings.showSystemSound)
+            .putBoolean("showSystemOption", settings.showSystemOption)
             .apply()
     }
 }

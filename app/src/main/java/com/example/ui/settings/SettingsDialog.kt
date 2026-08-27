@@ -29,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +62,7 @@ import com.example.data.UserSettings
 import com.example.ui.console.ActionButtonsCluster
 import com.example.ui.console.ConsoleSkin
 import com.example.ui.console.PhysicalControllersRow
+import com.example.ui.console.SystemPillButtonsRow
 import kotlin.math.roundToInt
 
 @Composable
@@ -647,37 +649,79 @@ fun SettingsScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // 4. Live Mini Preview
-                            Text("Live Layout Preview", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                            // 4. Live Mini Preview & Interactive Button Toggling
+                            val toggleButtonVisibility: (String) -> Unit = { key ->
+                                val newS = when (key) {
+                                    "showDpadUp" -> settings.copy(showDpadUp = !settings.showDpadUp)
+                                    "showDpadDown" -> settings.copy(showDpadDown = !settings.showDpadDown)
+                                    "showDpadLeft" -> settings.copy(showDpadLeft = !settings.showDpadLeft)
+                                    "showDpadRight" -> settings.copy(showDpadRight = !settings.showDpadRight)
+                                    "showActionButton1" -> settings.copy(showActionButton1 = !settings.showActionButton1)
+                                    "showActionButton2" -> settings.copy(showActionButton2 = !settings.showActionButton2)
+                                    "showActionButton3" -> settings.copy(showActionButton3 = !settings.showActionButton3)
+                                    "showActionButton4" -> settings.copy(showActionButton4 = !settings.showActionButton4)
+                                    "showSystemPause" -> settings.copy(showSystemPause = !settings.showSystemPause)
+                                    "showSystemReset" -> settings.copy(showSystemReset = !settings.showSystemReset)
+                                    "showSystemSound" -> settings.copy(showSystemSound = !settings.showSystemSound)
+                                    "showSystemOption" -> settings.copy(showSystemOption = !settings.showSystemOption)
+                                    else -> settings
+                                }
+                                settings = newS
+                                onSaveSettings(newS)
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Live Layout Preview", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                                Text("(Tap any button to show / remove)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(140.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(ConsoleSkin.getById(settings.themeIndex).bezelColor)
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                PhysicalControllersRow(
-                                    onMoveLeft = {},
-                                    onMoveRight = {},
-                                    onSoftDrop = {},
-                                    onHardDrop = {},
-                                    onRotateClockwise = {},
-                                    onRotateCounterClockwise = {},
-                                    onHoldPiece = {},
-                                    leftHandedMode = settings.leftHandedMode,
-                                    buttonScale = settings.buttonScale,
-                                    verticalOffset = 0,
-                                    userSettings = settings,
-                                    skin = ConsoleSkin.getById(settings.themeIndex)
-                                )
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    SystemPillButtonsRow(
+                                        isPaused = false,
+                                        soundEnabled = true,
+                                        onTogglePause = {},
+                                        onReset = {},
+                                        onToggleSound = {},
+                                        onOpenSettings = {},
+                                        onOpenHighScores = {},
+                                        skin = ConsoleSkin.getById(settings.themeIndex),
+                                        userSettings = settings,
+                                        onToggleKey = toggleButtonVisibility
+                                    )
+                                    PhysicalControllersRow(
+                                        onMoveLeft = {},
+                                        onMoveRight = {},
+                                        onSoftDrop = {},
+                                        onHardDrop = {},
+                                        onRotateClockwise = {},
+                                        onRotateCounterClockwise = {},
+                                        onHoldPiece = {},
+                                        leftHandedMode = settings.leftHandedMode,
+                                        buttonScale = settings.buttonScale,
+                                        verticalOffset = 0,
+                                        userSettings = settings,
+                                        onToggleKey = toggleButtonVisibility,
+                                        skin = ConsoleSkin.getById(settings.themeIndex)
+                                    )
+                                }
                             }
                         }
-
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
                     SettingSwitchRow(

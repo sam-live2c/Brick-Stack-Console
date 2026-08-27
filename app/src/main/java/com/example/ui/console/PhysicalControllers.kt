@@ -84,6 +84,8 @@ fun SystemPillButtonsRow(
     onOpenSettings: () -> Unit,
     onOpenHighScores: () -> Unit,
     skin: ConsoleSkin,
+    userSettings: UserSettings? = null,
+    onToggleKey: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -93,34 +95,50 @@ fun SystemPillButtonsRow(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SystemSmallButton(
-                label = if (isPaused) "PLAY" else "PAUSE",
-                icon = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
-                skin = skin,
-                buttonWidth = buttonWidth,
-                onClick = onTogglePause
-            )
-            SystemSmallButton(
-                label = "RESET",
-                icon = Icons.Default.Refresh,
-                skin = skin,
-                buttonWidth = buttonWidth,
-                onClick = onReset
-            )
-            SystemSmallButton(
-                label = if (soundEnabled) "SOUND ON" else "MUTED",
-                icon = if (soundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                skin = skin,
-                buttonWidth = buttonWidth,
-                onClick = onToggleSound
-            )
-            SystemSmallButton(
-                label = "OPTION",
-                icon = Icons.Default.Settings,
-                skin = skin,
-                buttonWidth = buttonWidth,
-                onClick = onOpenSettings
-            )
+            val showPause = userSettings?.showSystemPause != false
+            if (onToggleKey != null || showPause) {
+                SystemSmallButton(
+                    label = if (isPaused) "PLAY" else "PAUSE",
+                    icon = if (isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                    skin = skin,
+                    buttonWidth = buttonWidth,
+                    onClick = if (onToggleKey != null) { { onToggleKey("showSystemPause") } } else onTogglePause,
+                    alpha = if (showPause) 1.0f else 0.25f
+                )
+            }
+            val showReset = userSettings?.showSystemReset != false
+            if (onToggleKey != null || showReset) {
+                SystemSmallButton(
+                    label = "RESET",
+                    icon = Icons.Default.Refresh,
+                    skin = skin,
+                    buttonWidth = buttonWidth,
+                    onClick = if (onToggleKey != null) { { onToggleKey("showSystemReset") } } else onReset,
+                    alpha = if (showReset) 1.0f else 0.25f
+                )
+            }
+            val showSound = userSettings?.showSystemSound != false
+            if (onToggleKey != null || showSound) {
+                SystemSmallButton(
+                    label = if (soundEnabled) "SOUND ON" else "MUTED",
+                    icon = if (soundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                    skin = skin,
+                    buttonWidth = buttonWidth,
+                    onClick = if (onToggleKey != null) { { onToggleKey("showSystemSound") } } else onToggleSound,
+                    alpha = if (showSound) 1.0f else 0.25f
+                )
+            }
+            val showOption = userSettings?.showSystemOption != false
+            if (onToggleKey != null || showOption) {
+                SystemSmallButton(
+                    label = "OPTION",
+                    icon = Icons.Default.Settings,
+                    skin = skin,
+                    buttonWidth = buttonWidth,
+                    onClick = if (onToggleKey != null) { { onToggleKey("showSystemOption") } } else onOpenSettings,
+                    alpha = if (showOption) 1.0f else 0.25f
+                )
+            }
         }
     }
 }
@@ -131,7 +149,8 @@ private fun SystemSmallButton(
     icon: ImageVector,
     skin: ConsoleSkin,
     buttonWidth: Dp,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    alpha: Float = 1.0f
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     Column(
@@ -151,25 +170,29 @@ private fun SystemSmallButton(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            skin.systemButtonColor,
-                            skin.systemButtonColor.copy(alpha = 0.7f)
+                            skin.systemButtonColor.copy(alpha = alpha),
+                            skin.systemButtonColor.copy(alpha = 0.7f * alpha)
                         )
                     )
                 )
-                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(11.dp)),
+                .border(
+                    1.dp,
+                    if (alpha < 0.5f) Color.Red.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.2f),
+                    RoundedCornerShape(11.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color.White,
+                tint = Color.White.copy(alpha = alpha),
                 modifier = Modifier.size(13.dp)
             )
         }
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = label,
-            color = skin.brandTextColor,
+            color = skin.brandTextColor.copy(alpha = alpha),
             fontSize = 7.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -191,6 +214,7 @@ fun PhysicalControllersRow(
     buttonScale: Float,
     verticalOffset: Int = 0,
     userSettings: UserSettings? = null,
+    onToggleKey: ((String) -> Unit)? = null,
     skin: ConsoleSkin,
     modifier: Modifier = Modifier
 ) {
@@ -217,6 +241,8 @@ fun PhysicalControllersRow(
                     onRight = onMoveRight,
                     onDown = onSoftDrop,
                     onUp = onHardDrop,
+                    userSettings = userSettings,
+                    onToggleKey = onToggleKey,
                     skin = skin
                 )
 
@@ -231,6 +257,8 @@ fun PhysicalControllersRow(
                     button2Action = userSettings?.button2Action ?: ActionButtonType.HARD_DROP,
                     button3Action = userSettings?.button3Action ?: ActionButtonType.ROTATE_LEFT,
                     button4Action = userSettings?.button4Action ?: ActionButtonType.ROTATE_RIGHT,
+                    userSettings = userSettings,
+                    onToggleKey = onToggleKey,
                     skin = skin
                 )
             } else {
@@ -246,6 +274,8 @@ fun PhysicalControllersRow(
                     button2Action = userSettings?.button2Action ?: ActionButtonType.HARD_DROP,
                     button3Action = userSettings?.button3Action ?: ActionButtonType.ROTATE_LEFT,
                     button4Action = userSettings?.button4Action ?: ActionButtonType.ROTATE_RIGHT,
+                    userSettings = userSettings,
+                    onToggleKey = onToggleKey,
                     skin = skin
                 )
 
@@ -255,6 +285,8 @@ fun PhysicalControllersRow(
                     onRight = onMoveRight,
                     onDown = onSoftDrop,
                     onUp = onHardDrop,
+                    userSettings = userSettings,
+                    onToggleKey = onToggleKey,
                     skin = skin
                 )
             }
@@ -270,12 +302,19 @@ fun DPadController(
     onRight: () -> Unit,
     onDown: () -> Unit,
     onUp: () -> Unit,
+    userSettings: UserSettings? = null,
+    onToggleKey: ((String) -> Unit)? = null,
     skin: ConsoleSkin,
     modifier: Modifier = Modifier
 ) {
     val segmentSize = (size * 0.28f).coerceIn(24.dp, 46.dp)
     val pivotSize = (size * 0.28f).coerceIn(24.dp, 46.dp)
     val iconSize = (segmentSize * 0.52f).coerceIn(12.dp, 22.dp)
+
+    val showUp = userSettings?.showDpadUp ?: true
+    val showDown = userSettings?.showDpadDown ?: true
+    val showLeft = userSettings?.showDpadLeft ?: true
+    val showRight = userSettings?.showDpadRight ?: true
 
     Box(
         modifier = modifier
@@ -297,27 +336,37 @@ fun DPadController(
             verticalArrangement = Arrangement.Center
         ) {
             // UP BUTTON
-            DPadSegmentButton(
-                icon = Icons.Default.ArrowUpward,
-                label = "UP",
-                skin = skin,
-                segmentSize = segmentSize,
-                iconSize = iconSize,
-                onClick = onUp,
-                shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
-            )
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // LEFT BUTTON
+            if (onToggleKey != null || showUp) {
                 DPadSegmentButton(
-                    icon = Icons.Default.ArrowBack,
-                    label = "LEFT",
+                    icon = Icons.Default.ArrowUpward,
+                    label = "UP",
                     skin = skin,
                     segmentSize = segmentSize,
                     iconSize = iconSize,
-                    onClick = onLeft,
-                    shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
+                    onClick = if (onToggleKey != null) { { onToggleKey("showDpadUp") } } else onUp,
+                    shape = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp),
+                    alpha = if (showUp) 1.0f else 0.25f
                 )
+            } else {
+                Spacer(modifier = Modifier.size(segmentSize))
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // LEFT BUTTON
+                if (onToggleKey != null || showLeft) {
+                    DPadSegmentButton(
+                        icon = Icons.Default.ArrowBack,
+                        label = "LEFT",
+                        skin = skin,
+                        segmentSize = segmentSize,
+                        iconSize = iconSize,
+                        onClick = if (onToggleKey != null) { { onToggleKey("showDpadLeft") } } else onLeft,
+                        shape = RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp),
+                        alpha = if (showLeft) 1.0f else 0.25f
+                    )
+                } else {
+                    Spacer(modifier = Modifier.size(segmentSize))
+                }
 
                 // CENTER D-PAD PIVOT
                 Box(
@@ -336,27 +385,37 @@ fun DPadController(
                 }
 
                 // RIGHT BUTTON
-                DPadSegmentButton(
-                    icon = Icons.Default.ArrowForward,
-                    label = "RIGHT",
-                    skin = skin,
-                    segmentSize = segmentSize,
-                    iconSize = iconSize,
-                    onClick = onRight,
-                    shape = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
-                )
+                if (onToggleKey != null || showRight) {
+                    DPadSegmentButton(
+                        icon = Icons.Default.ArrowForward,
+                        label = "RIGHT",
+                        skin = skin,
+                        segmentSize = segmentSize,
+                        iconSize = iconSize,
+                        onClick = if (onToggleKey != null) { { onToggleKey("showDpadRight") } } else onRight,
+                        shape = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp),
+                        alpha = if (showRight) 1.0f else 0.25f
+                    )
+                } else {
+                    Spacer(modifier = Modifier.size(segmentSize))
+                }
             }
 
             // DOWN BUTTON (SOFT DROP)
-            DPadSegmentButton(
-                icon = Icons.Default.KeyboardArrowDown,
-                label = "DOWN",
-                skin = skin,
-                segmentSize = segmentSize,
-                iconSize = iconSize,
-                onClick = onDown,
-                shape = RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)
-            )
+            if (onToggleKey != null || showDown) {
+                DPadSegmentButton(
+                    icon = Icons.Default.KeyboardArrowDown,
+                    label = "DOWN",
+                    skin = skin,
+                    segmentSize = segmentSize,
+                    iconSize = iconSize,
+                    onClick = if (onToggleKey != null) { { onToggleKey("showDpadDown") } } else onDown,
+                    shape = RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp),
+                    alpha = if (showDown) 1.0f else 0.25f
+                )
+            } else {
+                Spacer(modifier = Modifier.size(segmentSize))
+            }
         }
     }
 }
@@ -369,7 +428,8 @@ private fun DPadSegmentButton(
     segmentSize: Dp,
     iconSize: Dp,
     onClick: () -> Unit,
-    shape: RoundedCornerShape
+    shape: RoundedCornerShape,
+    alpha: Float = 1.0f
 ) {
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.92f else 1.0f, label = "dpad_scale")
@@ -380,10 +440,14 @@ private fun DPadSegmentButton(
             .scale(scale)
             .clip(shape)
             .background(
-                if (isPressed) skin.dpadColor.copy(alpha = 0.7f)
-                else skin.dpadColor
+                if (isPressed) skin.dpadColor.copy(alpha = 0.7f * alpha)
+                else skin.dpadColor.copy(alpha = alpha)
             )
-            .border(1.dp, Color.White.copy(alpha = 0.15f), shape)
+            .border(
+                1.dp,
+                if (alpha < 0.5f) Color.Red.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.15f),
+                shape
+            )
             .clickable {
                 isPressed = true
                 onClick()
@@ -394,7 +458,7 @@ private fun DPadSegmentButton(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color.White.copy(alpha = 0.85f),
+            tint = Color.White.copy(alpha = 0.85f * alpha),
             modifier = Modifier.size(iconSize)
         )
     }
@@ -412,19 +476,26 @@ fun ActionButtonsCluster(
     button2Action: ActionButtonType = ActionButtonType.HARD_DROP,
     button3Action: ActionButtonType = ActionButtonType.ROTATE_LEFT,
     button4Action: ActionButtonType = ActionButtonType.ROTATE_RIGHT,
+    userSettings: UserSettings? = null,
+    onToggleKey: ((String) -> Unit)? = null,
     skin: ConsoleSkin,
     modifier: Modifier = Modifier
 ) {
-    val buttonSize = when (buttonLayout) {
-        ActionButtonLayout.GRID_2X2 -> (size * 0.38f).coerceIn(28.dp, 50.dp)
-        ActionButtonLayout.DIAMOND -> (size * 0.30f).coerceIn(24.dp, 44.dp)
-        ActionButtonLayout.LINE_ROW -> (size * 0.22f).coerceIn(20.dp, 36.dp)
-    }
+    val buttonSize = (size * 0.28f).coerceIn(24.dp, 44.dp)
     val iconSize = (buttonSize * 0.48f).coerceIn(10.dp, 20.dp)
     val textSize = (size.value * 0.05f).coerceIn(5.5f, 9.5f).sp
 
+    val show1 = userSettings?.showActionButton1 ?: true
+    val show2 = userSettings?.showActionButton2 ?: true
+    val show3 = userSettings?.showActionButton3 ?: true
+    val show4 = userSettings?.showActionButton4 ?: true
+
     @Composable
-    fun RenderSingleActionButton(actionType: ActionButtonType) {
+    fun RenderSingleActionButton(actionType: ActionButtonType, isVisible: Boolean, keyName: String) {
+        if (onToggleKey == null && !isVisible) {
+            Box(modifier = Modifier.size(buttonSize))
+            return
+        }
         val icon = when (actionType) {
             ActionButtonType.HOLD -> Icons.Default.PanTool
             ActionButtonType.HARD_DROP -> Icons.Default.KeyboardDoubleArrowDown
@@ -438,11 +509,15 @@ fun ActionButtonsCluster(
             ActionButtonType.ROTATE_LEFT -> skin.actionButtonColorRotateLeft
             ActionButtonType.ROTATE_RIGHT -> skin.actionButtonColorRotateRight
         }
-        val onClick = when (actionType) {
-            ActionButtonType.HOLD -> onHold
-            ActionButtonType.HARD_DROP -> onHardDrop
-            ActionButtonType.ROTATE_LEFT -> onRotateLeft
-            ActionButtonType.ROTATE_RIGHT -> onRotateRight
+        val onClick = if (onToggleKey != null) {
+            { onToggleKey(keyName) }
+        } else {
+            when (actionType) {
+                ActionButtonType.HOLD -> onHold
+                ActionButtonType.HARD_DROP -> onHardDrop
+                ActionButtonType.ROTATE_LEFT -> onRotateLeft
+                ActionButtonType.ROTATE_RIGHT -> onRotateRight
+            }
         }
 
         UniformRoundActionButton(
@@ -453,7 +528,8 @@ fun ActionButtonsCluster(
             buttonSize = buttonSize,
             iconSize = iconSize,
             textSize = textSize,
-            onClick = onClick
+            onClick = onClick,
+            alpha = if (isVisible) 1.0f else 0.25f
         )
     }
 
@@ -475,16 +551,16 @@ fun ActionButtonsCluster(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RenderSingleActionButton(button1Action)
-                        RenderSingleActionButton(button2Action)
+                        RenderSingleActionButton(button1Action, show1, "showActionButton1")
+                        RenderSingleActionButton(button2Action, show2, "showActionButton2")
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RenderSingleActionButton(button3Action)
-                        RenderSingleActionButton(button4Action)
+                        RenderSingleActionButton(button3Action, show3, "showActionButton3")
+                        RenderSingleActionButton(button4Action, show4, "showActionButton4")
                     }
                 }
             }
@@ -494,16 +570,15 @@ fun ActionButtonsCluster(
                     verticalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    RenderSingleActionButton(button1Action)
+                    RenderSingleActionButton(button1Action, show1, "showActionButton1")
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        RenderSingleActionButton(button4Action)
-                        RenderSingleActionButton(button2Action)
+                        RenderSingleActionButton(button3Action, show3, "showActionButton3")
+                        RenderSingleActionButton(button2Action, show2, "showActionButton2")
                     }
-                    RenderSingleActionButton(button3Action)
                 }
             }
             ActionButtonLayout.LINE_ROW -> {
@@ -512,10 +587,10 @@ fun ActionButtonsCluster(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    RenderSingleActionButton(button1Action)
-                    RenderSingleActionButton(button2Action)
-                    RenderSingleActionButton(button3Action)
-                    RenderSingleActionButton(button4Action)
+                    RenderSingleActionButton(button1Action, show1, "showActionButton1")
+                    RenderSingleActionButton(button2Action, show2, "showActionButton2")
+                    RenderSingleActionButton(button3Action, show3, "showActionButton3")
+                    RenderSingleActionButton(button4Action, show4, "showActionButton4")
                 }
             }
         }
@@ -531,7 +606,8 @@ private fun UniformRoundActionButton(
     onClick: () -> Unit,
     buttonSize: Dp = 44.dp,
     iconSize: Dp = 20.dp,
-    textSize: TextUnit = 8.sp
+    textSize: TextUnit = 8.sp,
+    alpha: Float = 1.0f
 ) {
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(targetValue = if (isPressed) 0.9f else 1.0f, label = "btn_scale")
@@ -541,10 +617,14 @@ private fun UniformRoundActionButton(
             modifier = Modifier
                 .size(buttonSize)
                 .scale(scale)
-                .shadow(if (isPressed) 1.dp else 2.dp, CircleShape)
+                .shadow(if (alpha < 0.5f) 0.dp else (if (isPressed) 1.dp else 2.dp), CircleShape)
                 .clip(CircleShape)
-                .background(if (isPressed) color.copy(alpha = 0.8f) else color)
-                .border(1.dp, Color.Black.copy(alpha = 0.25f), CircleShape)
+                .background(if (isPressed) color.copy(alpha = 0.8f * alpha) else color.copy(alpha = alpha))
+                .border(
+                    1.dp,
+                    if (alpha < 0.5f) Color.Red.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.25f),
+                    CircleShape
+                )
                 .clickable {
                     isPressed = true
                     onClick()
@@ -555,18 +635,19 @@ private fun UniformRoundActionButton(
             Icon(
                 imageVector = icon,
                 contentDescription = subLabel,
-                tint = textColor,
+                tint = textColor.copy(alpha = alpha),
                 modifier = Modifier.size(iconSize)
             )
         }
-        Spacer(modifier = Modifier.height(1.dp))
-        Text(
-            text = subLabel,
-            color = color,
-            fontSize = textSize,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            maxLines = 1
-        )
+        if (subLabel.isNotEmpty()) {
+            Text(
+                text = subLabel,
+                color = textColor.copy(alpha = 0.8f * alpha),
+                fontSize = textSize,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1
+            )
+        }
     }
 }

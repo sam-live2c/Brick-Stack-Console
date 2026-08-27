@@ -96,7 +96,6 @@ fun HandheldConsoleFrame(
                 // 1. BRAND HEADER & NAVIGATION BADGES
                 BrandHeader(
                     skin = skin,
-                    onOpenSettings = onOpenSettings,
                     onOpenHighScores = onOpenHighScores,
                     onGoHome = onGoHome,
                     multiplayerModeTitle = multiplayerModeTitle
@@ -143,6 +142,7 @@ fun HandheldConsoleFrame(
                     onOpenSettings = onOpenSettings,
                     onOpenHighScores = onOpenHighScores,
                     skin = skin,
+                    userSettings = userSettings,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -181,7 +181,6 @@ fun HandheldConsoleFrame(
 @Composable
 private fun BrandHeader(
     skin: ConsoleSkin,
-    onOpenSettings: () -> Unit,
     onOpenHighScores: () -> Unit,
     onGoHome: () -> Unit,
     multiplayerModeTitle: String?
@@ -191,37 +190,8 @@ private fun BrandHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Settings Gear Button
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(skin.bezelColor.copy(alpha = 0.3f))
-                .border(1.dp, skin.brandTextColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onOpenSettings
-                )
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = "Settings",
-                    tint = skin.brandTextColor,
-                    modifier = Modifier.size(12.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Text(
-                    text = "SETTINGS",
-                    color = skin.brandTextColor,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-        }
+        // Left balancing spacer
+        Spacer(modifier = Modifier.width(52.dp))
 
         // Title Branding Text
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
