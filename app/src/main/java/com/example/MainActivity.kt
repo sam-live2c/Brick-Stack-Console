@@ -28,6 +28,7 @@ import com.example.ui.TetrisViewModel
 import com.example.ui.console.HandheldConsoleFrame
 import com.example.ui.history.HighScoresDialog
 import com.example.ui.settings.SettingsDialog
+import com.example.ui.settings.SettingsScreen
 import com.example.ui.theme.MyApplicationTheme
 
 class MainActivity : ComponentActivity() {
@@ -71,42 +72,44 @@ fun BrickConsoleApp(
             .fillMaxSize()
             .background(Color(0xFF0D111A))
     ) {
-        HandheldConsoleFrame(
-            gameState = gameState,
-            skin = skin,
-            userSettings = userSettings,
-            onMoveLeft = { viewModel.moveLeft(composeHaptic) },
-            onMoveRight = { viewModel.moveRight(composeHaptic) },
-            onSoftDrop = { viewModel.softDrop(composeHaptic) },
-            onHardDrop = { viewModel.hardDrop(composeHaptic) },
-            onRotateClockwise = { viewModel.rotateClockwise(composeHaptic) },
-            onRotateCounterClockwise = { viewModel.rotateCounterClockwise(composeHaptic) },
-            onHoldPiece = { viewModel.holdPiece(composeHaptic) },
-            onTogglePause = { viewModel.togglePause() },
-            onReset = { viewModel.resetGame() },
-            onToggleSound = { viewModel.toggleSound() },
-            onOpenSettings = {
-                if (gameState.status == GameStatus.PLAYING) {
-                    viewModel.togglePause()
-                }
-                showSettingsDialog = true
-            },
-            onOpenHighScores = {
-                if (gameState.status == GameStatus.PLAYING) {
-                    viewModel.togglePause()
-                }
-                showHighScoresDialog = true
-            },
-            onGoHome = { viewModel.resetGame() },
-            multiplayerModeTitle = null,
-            modifier = Modifier.fillMaxSize()
-        )
-
         if (showSettingsDialog) {
-            SettingsDialog(
+            SettingsScreen(
                 currentSettings = userSettings,
+                skin = skin,
                 onSaveSettings = { newSettings -> viewModel.updateSettings(newSettings) },
-                onDismiss = { showSettingsDialog = false }
+                onDismiss = { showSettingsDialog = false },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            HandheldConsoleFrame(
+                gameState = gameState,
+                skin = skin,
+                userSettings = userSettings,
+                onMoveLeft = { viewModel.moveLeft(composeHaptic) },
+                onMoveRight = { viewModel.moveRight(composeHaptic) },
+                onSoftDrop = { viewModel.softDrop(composeHaptic) },
+                onHardDrop = { viewModel.hardDrop(composeHaptic) },
+                onRotateClockwise = { viewModel.rotateClockwise(composeHaptic) },
+                onRotateCounterClockwise = { viewModel.rotateCounterClockwise(composeHaptic) },
+                onHoldPiece = { viewModel.holdPiece(composeHaptic) },
+                onTogglePause = { viewModel.togglePause() },
+                onReset = { viewModel.resetGame() },
+                onToggleSound = { viewModel.toggleSound() },
+                onOpenSettings = {
+                    if (gameState.status == GameStatus.PLAYING) {
+                        viewModel.togglePause()
+                    }
+                    showSettingsDialog = true
+                },
+                onOpenHighScores = {
+                    if (gameState.status == GameStatus.PLAYING) {
+                        viewModel.togglePause()
+                    }
+                    showHighScoresDialog = true
+                },
+                onGoHome = { viewModel.resetGame() },
+                multiplayerModeTitle = null,
+                modifier = Modifier.fillMaxSize()
             )
         }
 

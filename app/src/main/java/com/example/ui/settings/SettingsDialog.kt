@@ -23,7 +23,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -62,67 +64,60 @@ import com.example.ui.console.PhysicalControllersRow
 import kotlin.math.roundToInt
 
 @Composable
-fun SettingsDialog(
+fun SettingsScreen(
     currentSettings: UserSettings,
+    skin: ConsoleSkin,
     onSaveSettings: (UserSettings) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var settings by remember(currentSettings) { mutableStateOf(currentSettings) }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
-        )
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = Color(0xFF0D111A)
     ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surface
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
         ) {
-            Column(
+            // Header (Fixed against scroll)
+            Row(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
+                    .fillMaxWidth()
+                    .background(Color(0xFF0D111A))
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header (Fixed against scroll)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                IconButton(
+                    onClick = onDismiss
                 ) {
-                    IconButton(
-                        onClick = {
-                            onSaveSettings(settings)
-                            onDismiss()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "CONSOLE SETTINGS",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.primary
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back to Game",
+                        tint = Color.White
                     )
                 }
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "CONSOLE SETTINGS",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    color = Color.White
+                )
+            }
 
-                // Middle Content (Scrollable)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
+            // Middle Content (Scrollable)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
                     // 1. GAME SPEED MULTIPLIER & START LEVEL
                     Row(
                         verticalAlignment = Alignment.CenterVertically
@@ -717,10 +712,55 @@ fun SettingsDialog(
                             onSaveSettings(newS)
                         }
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = {
+                            val defaultSettings = UserSettings()
+                            settings = defaultSettings
+                            onSaveSettings(defaultSettings)
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFC62828),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Reset to Default Settings",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
         }
     }
+
+@Composable
+fun SettingsDialog(
+    currentSettings: UserSettings,
+    onSaveSettings: (UserSettings) -> Unit,
+    onDismiss: () -> Unit
+) {
+    SettingsScreen(
+        currentSettings = currentSettings,
+        skin = ConsoleSkin.getById(currentSettings.themeIndex),
+        onSaveSettings = onSaveSettings,
+        onDismiss = onDismiss
+    )
 }
 
 @Composable
