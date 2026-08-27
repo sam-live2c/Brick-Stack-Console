@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,18 +96,19 @@ fun HandheldConsoleFrame(
                 // 1. BRAND HEADER & NAVIGATION BADGES
                 BrandHeader(
                     skin = skin,
+                    onOpenSettings = onOpenSettings,
                     onOpenHighScores = onOpenHighScores,
                     onGoHome = onGoHome,
                     multiplayerModeTitle = multiplayerModeTitle
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // 2. LCD GAME SCREEN (With optional Touch Gesture Overlay)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1.0f),
+                        .weight(0.92f),
                     contentAlignment = Alignment.Center
                 ) {
                     LcdScreen(
@@ -127,7 +131,7 @@ fun HandheldConsoleFrame(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // 3. SYSTEM UTILITY BUTTONS ROW (START, RESET, MUTE, OPTION)
                 SystemPillButtonsRow(
@@ -142,7 +146,7 @@ fun HandheldConsoleFrame(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 // 4. PHYSICAL D-PAD & ACTION CONTROLLERS
                 if (userSettings.virtualButtonsEnabled) {
@@ -162,10 +166,10 @@ fun HandheldConsoleFrame(
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // 5. BOTTOM RETRO SPEAKER GRILL TEXTURE
                 SpeakerGrillTexture(skin = skin, modifier = Modifier.padding(bottom = 2.dp))
@@ -177,6 +181,7 @@ fun HandheldConsoleFrame(
 @Composable
 private fun BrandHeader(
     skin: ConsoleSkin,
+    onOpenSettings: () -> Unit,
     onOpenHighScores: () -> Unit,
     onGoHome: () -> Unit,
     multiplayerModeTitle: String?
@@ -186,8 +191,37 @@ private fun BrandHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left balance spacer (matches right button width)
-        Spacer(modifier = Modifier.width(52.dp))
+        // Settings Gear Button
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(skin.bezelColor.copy(alpha = 0.3f))
+                .border(1.dp, skin.brandTextColor.copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onOpenSettings
+                )
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = skin.brandTextColor,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    text = "SETTINGS",
+                    color = skin.brandTextColor,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+        }
 
         // Title Branding Text
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

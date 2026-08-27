@@ -133,9 +133,16 @@ private fun SystemSmallButton(
     buttonWidth: Dp,
     onClick: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(1.dp)
+        modifier = Modifier
+            .padding(1.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
     ) {
         Box(
             modifier = Modifier
@@ -149,8 +156,7 @@ private fun SystemSmallButton(
                         )
                     )
                 )
-                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(11.dp))
-                .clickable(onClick = onClick),
+                .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(11.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -191,12 +197,12 @@ fun PhysicalControllersRow(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .offset(y = verticalOffset.dp.coerceIn((-4).dp, 20.dp))
+            .offset(y = verticalOffset.dp.coerceIn((-24).dp, 20.dp))
     ) {
         val availableWidth = maxWidth
         val maxSingleWidth = (availableWidth - 8.dp) / 2.05f
-        val requestedSize = 135.dp * buttonScale
-        val controllerSize = requestedSize.coerceAtMost(maxSingleWidth).coerceAtLeast(80.dp)
+        val requestedSize = 126.dp * buttonScale
+        val controllerSize = requestedSize.coerceAtMost(maxSingleWidth).coerceAtLeast(76.dp)
 
         Row(
             modifier = Modifier.fillMaxWidth(),
