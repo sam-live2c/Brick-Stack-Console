@@ -31,19 +31,23 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +60,7 @@ import com.example.game.Tetromino
 import com.example.game.TetrominoType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 @Composable
 fun LcdScreen(
@@ -488,6 +493,34 @@ private fun StatDisplay(
     }
 }
 
+private data class LineParticle(
+    var x: Float,
+    var y: Float,
+    var vx: Float,
+    var vy: Float,
+    var size: Float,
+    val color: Color,
+    val isSpark: Boolean,
+    val maxLifeMs: Float,
+    var lifeMs: Float
+)
+
+private data class ActiveRowFlash(
+    val rowIndex: Int,
+    val color: Color,
+    val maxDurationMs: Float = 400f,
+    var elapsedMs: Float = 0f
+)
+
+private data class ClearTextPopup(
+    val message: String,
+    val color: Color,
+    val centerRow: Int,
+    val isTetris: Boolean,
+    val maxDurationMs: Float = 850f,
+    var elapsedMs: Float = 0f
+)
+
 @Composable
 private fun TetrisMatrixCanvas(
     gameState: TetrisGameState,
@@ -495,95 +528,323 @@ private fun TetrisMatrixCanvas(
     ghostEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier = modifier) {
-        val cellW = size.width / TetrisGameState.BOARD_WIDTH
-        val cellH = size.height / TetrisGameState.BOARD_HEIGHT
-        val gap = 1.0f
+    val particles = remember { mutableStateListOf<LineParticle>() }
+    val rowFlashes = remember { mutableStateListOf<ActiveRowFlash>() }
+    val textPopups = remember { mutableStateListOf<ClearTextPopup>() }
+    var screenShakeOffset by remember { mutableStateOf(Offset.Zero) }
+    var screenFlashAlpha by remember { mutableStateOf(0f) }
 
-        // 1. Draw Inactive Ghost Grid (classic LCD background grid)
-        for (r in 0 until TetrisGameState.BOARD_HEIGHT) {
-            for (c in 0 until TetrisGameState.BOARD_WIDTH) {
-                val left = c * cellW + gap
-                val top = r * cellH + gap
-                val w = cellW - gap * 2
-                val h = cellH - gap * 2
+    LaunchedEffect(gameState.lineClearTrigger) {
+        if (gameState.lineClearTrigger <= 0L) return@LaunchedEffect
 
-                drawBlock(
-                    left = left,
-                    top = top,
-                    w = w,
-                    h = h,
-                    color = skin.inactivePixelColor,
-                    isOutlineOnly = true,
-                    strokeWidth = 1f
+        val clearedLines = gameState.clearingLines
+        val count = gameState.lastClearedCount.coerceAtLeast(1)
+        val isTetris = count >= 4
+        val isMulti = count >= 2
+
+        // Flash screen color tint
+        screenFlashAlpha = if (isTetris) 0.65f else 0.35f
+
+        // Screen shake burst for tactile arcade feel
+        if (isMulti) {
+            val shakeIntensity = if (isTetris) 12f else 6f
+            screenShakeOffset = Offset(
+                x = (Random.nextFloat() - 0.5f) * shakeIntensity,
+                y = (Random.nextFloat() - 0.5f) * shakeIntensity
+            )
+        }
+
+        // Add Row Flashes for each cleared row
+        val flashColor = when {
+            isTetris -> Color(0xFFFFD700) // Gold
+            count == 3 -> Color(0xFF00FFFF) // Cyan
+            count == 2 -> Color(0xFFFF4081) // Magenta Pink
+            else -> skin.activePixelColor
+        }
+
+        clearedLines.forEach { r ->
+            rowFlashes.add(ActiveRowFlash(rowIndex = r, color = flashColor))
+        }
+
+        // Spawn particles along cleared rows
+        val particleCountPerRow = if (isTetris) 35 else 20
+        clearedLines.forEach { r ->
+            for (i in 0 until particleCountPerRow) {
+                val normalizedX = Random.nextFloat()
+                val speedX = (Random.nextFloat() - 0.5f) * (if (isTetris) 500f else 300f)
+                val speedY = (Random.nextFloat() - 0.7f) * (if (isTetris) 450f else 250f)
+                val pColor = if (Random.nextBoolean()) flashColor else skin.activePixelColor
+
+                particles.add(
+                    LineParticle(
+                        x = normalizedX,
+                        y = r.toFloat() + 0.5f,
+                        vx = speedX,
+                        vy = speedY,
+                        size = Random.nextFloat() * (if (isTetris) 7f else 5f) + 2f,
+                        color = pColor,
+                        isSpark = Random.nextBoolean(),
+                        maxLifeMs = Random.nextFloat() * 350f + 300f,
+                        lifeMs = 0f
+                    )
                 )
             }
         }
 
-        // 2. Draw Locked Grid Blocks
-        for (r in 0 until TetrisGameState.BOARD_HEIGHT) {
-            for (c in 0 until TetrisGameState.BOARD_WIDTH) {
-                val typeId = gameState.grid[r][c]
-                if (typeId != 0) {
-                    val left = c * cellW + gap
-                    val top = r * cellH + gap
-                    val w = cellW - gap * 2
-                    val h = cellH - gap * 2
+        // Add Floating Action Text Popup
+        val avgRow = if (clearedLines.isNotEmpty()) clearedLines.average().toInt() else 10
+        val msg = gameState.lastActionMessage ?: when (count) {
+            4 -> "TETRIS!!"
+            3 -> "TRIPLE!"
+            2 -> "DOUBLE!"
+            else -> "SINGLE!"
+        }
+        textPopups.add(
+            ClearTextPopup(
+                message = msg,
+                color = flashColor,
+                centerRow = avgRow,
+                isTetris = isTetris
+            )
+        )
+    }
 
-                    drawBlock(
-                        left = left,
-                        top = top,
-                        w = w,
-                        h = h,
-                        color = skin.getBlockColor(typeId),
-                        isOutlineOnly = false
+    // Ticker frame loop for particle simulation & flash decays
+    LaunchedEffect(particles.isNotEmpty() || rowFlashes.isNotEmpty() || textPopups.isNotEmpty() || screenFlashAlpha > 0f) {
+        var lastTimeNanos = System.nanoTime()
+        while (particles.isNotEmpty() || rowFlashes.isNotEmpty() || textPopups.isNotEmpty() || screenFlashAlpha > 0f) {
+            withFrameNanos { frameTimeNanos ->
+                val dtMs = ((frameTimeNanos - lastTimeNanos) / 1_000_000f).coerceAtMost(32f)
+                lastTimeNanos = frameTimeNanos
+
+                // Fade screen flash & decay screen shake
+                if (screenFlashAlpha > 0f) {
+                    screenFlashAlpha = (screenFlashAlpha - (dtMs / 280f)).coerceAtLeast(0f)
+                }
+                screenShakeOffset = Offset(
+                    x = screenShakeOffset.x * 0.8f,
+                    y = screenShakeOffset.y * 0.8f
+                )
+
+                // Update row flashes
+                val flashIter = rowFlashes.iterator()
+                while (flashIter.hasNext()) {
+                    val item = flashIter.next()
+                    item.elapsedMs += dtMs
+                    if (item.elapsedMs >= item.maxDurationMs) {
+                        flashIter.remove()
+                    }
+                }
+
+                // Update text popups
+                val popupIter = textPopups.iterator()
+                while (popupIter.hasNext()) {
+                    val item = popupIter.next()
+                    item.elapsedMs += dtMs
+                    if (item.elapsedMs >= item.maxDurationMs) {
+                        popupIter.remove()
+                    }
+                }
+
+                // Update particles
+                val pIter = particles.iterator()
+                while (pIter.hasNext()) {
+                    val p = pIter.next()
+                    p.lifeMs += dtMs
+                    if (p.lifeMs >= p.maxLifeMs) {
+                        pIter.remove()
+                    } else {
+                        val dtSec = dtMs / 1000f
+                        p.x += (p.vx / 300f) * dtSec
+                        p.y += (p.vy / 300f) * dtSec
+                        p.vy += 220f * dtSec
+                    }
+                }
+            }
+        }
+    }
+
+    Box(modifier = modifier) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val cellW = size.width / TetrisGameState.BOARD_WIDTH
+            val cellH = size.height / TetrisGameState.BOARD_HEIGHT
+            val gap = 1.0f
+
+            translate(left = screenShakeOffset.x, top = screenShakeOffset.y) {
+                // 1. Draw Inactive Ghost Grid
+                for (r in 0 until TetrisGameState.BOARD_HEIGHT) {
+                    for (c in 0 until TetrisGameState.BOARD_WIDTH) {
+                        val left = c * cellW + gap
+                        val top = r * cellH + gap
+                        val w = cellW - gap * 2
+                        val h = cellH - gap * 2
+
+                        drawBlock(
+                            left = left,
+                            top = top,
+                            w = w,
+                            h = h,
+                            color = skin.inactivePixelColor,
+                            isOutlineOnly = true,
+                            strokeWidth = 1f
+                        )
+                    }
+                }
+
+                // 2. Draw Locked Grid Blocks
+                for (r in 0 until TetrisGameState.BOARD_HEIGHT) {
+                    for (c in 0 until TetrisGameState.BOARD_WIDTH) {
+                        val typeId = gameState.grid[r][c]
+                        if (typeId != 0) {
+                            val left = c * cellW + gap
+                            val top = r * cellH + gap
+                            val w = cellW - gap * 2
+                            val h = cellH - gap * 2
+
+                            drawBlock(
+                                left = left,
+                                top = top,
+                                w = w,
+                                h = h,
+                                color = skin.getBlockColor(typeId),
+                                isOutlineOnly = false
+                            )
+                        }
+                    }
+                }
+
+                // 3. Draw Ghost Piece (if enabled & playing)
+                if (ghostEnabled && gameState.status == GameStatus.PLAYING && gameState.ghostPiece != null && gameState.currentPiece != null) {
+                    val ghostCells = gameState.ghostPiece.getOccupiedCells()
+                    for (cell in ghostCells) {
+                        if (cell.y in 0 until TetrisGameState.BOARD_HEIGHT && cell.x in 0 until TetrisGameState.BOARD_WIDTH) {
+                            val left = cell.x * cellW + gap
+                            val top = cell.y * cellH + gap
+                            val w = cellW - gap * 2
+                            val h = cellH - gap * 2
+
+                            drawBlock(
+                                left = left,
+                                top = top,
+                                w = w,
+                                h = h,
+                                color = skin.activePixelColor.copy(alpha = 0.35f),
+                                isOutlineOnly = true,
+                                strokeWidth = 2f
+                            )
+                        }
+                    }
+                }
+
+                // 4. Draw Current Active Piece
+                if (gameState.currentPiece != null && gameState.status == GameStatus.PLAYING) {
+                    val cells = gameState.currentPiece.getOccupiedCells()
+                    for (cell in cells) {
+                        if (cell.y in 0 until TetrisGameState.BOARD_HEIGHT && cell.x in 0 until TetrisGameState.BOARD_WIDTH) {
+                            val left = cell.x * cellW + gap
+                            val top = cell.y * cellH + gap
+                            val w = cellW - gap * 2
+                            val h = cellH - gap * 2
+
+                            drawBlock(
+                                left = left,
+                                top = top,
+                                w = w,
+                                h = h,
+                                color = skin.getBlockColor(gameState.currentPiece.type.id),
+                                isOutlineOnly = false
+                            )
+                        }
+                    }
+                }
+
+                // 5. Draw Row Visual Flashes
+                rowFlashes.forEach { rf ->
+                    val progress = (rf.elapsedMs / rf.maxDurationMs).coerceIn(0f, 1f)
+                    val flashAlpha = (1f - progress) * 0.9f
+                    val rowTop = rf.rowIndex * cellH
+
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                rf.color.copy(alpha = 0.15f * flashAlpha),
+                                rf.color.copy(alpha = flashAlpha),
+                                Color.White.copy(alpha = flashAlpha),
+                                rf.color.copy(alpha = flashAlpha),
+                                rf.color.copy(alpha = 0.15f * flashAlpha)
+                            )
+                        ),
+                        topLeft = Offset(0f, rowTop - cellH * 0.1f),
+                        size = Size(size.width, cellH * 1.2f)
+                    )
+                }
+
+                // 6. Draw Particle Burst Effects
+                particles.forEach { p ->
+                    val progress = (p.lifeMs / p.maxLifeMs).coerceIn(0f, 1f)
+                    val pAlpha = (1f - progress)
+                    val px = p.x * size.width
+                    val py = p.y * cellH
+
+                    if (p.isSpark) {
+                        val particleSize = p.size * (1.2f - progress * 0.4f)
+                        drawRect(
+                            color = p.color.copy(alpha = pAlpha),
+                            topLeft = Offset(px - particleSize / 2f, py - particleSize / 2f),
+                            size = Size(particleSize, particleSize)
+                        )
+                    } else {
+                        val particleRadius = p.size * (1f - progress * 0.3f)
+                        drawCircle(
+                            color = p.color.copy(alpha = pAlpha),
+                            center = Offset(px, py),
+                            radius = particleRadius
+                        )
+                    }
+                }
+
+                // 7. Draw Screen Tint Flash
+                if (screenFlashAlpha > 0f) {
+                    drawRect(
+                        color = Color.White.copy(alpha = screenFlashAlpha * 0.45f),
+                        topLeft = Offset.Zero,
+                        size = size
                     )
                 }
             }
         }
 
-        // 3. Draw Ghost Piece (if enabled & playing)
-        if (ghostEnabled && gameState.status == GameStatus.PLAYING && gameState.ghostPiece != null && gameState.currentPiece != null) {
-            val ghostCells = gameState.ghostPiece.getOccupiedCells()
-            for (cell in ghostCells) {
-                if (cell.y in 0 until TetrisGameState.BOARD_HEIGHT && cell.x in 0 until TetrisGameState.BOARD_WIDTH) {
-                    val left = cell.x * cellW + gap
-                    val top = cell.y * cellH + gap
-                    val w = cellW - gap * 2
-                    val h = cellH - gap * 2
+        // Floating Action Text Popups
+        textPopups.forEach { popup ->
+            val progress = (popup.elapsedMs / popup.maxDurationMs).coerceIn(0f, 1f)
+            val alpha = (1f - progress).coerceIn(0f, 1f)
+            val offsetY = (popup.centerRow * 12f) - (progress * 25f)
 
-                    drawBlock(
-                        left = left,
-                        top = top,
-                        w = w,
-                        h = h,
-                        color = skin.activePixelColor.copy(alpha = 0.35f),
-                        isOutlineOnly = true,
-                        strokeWidth = 2f
-                    )
-                }
-            }
-        }
-
-        // 4. Draw Current Active Piece
-        if (gameState.currentPiece != null && gameState.status == GameStatus.PLAYING) {
-            val cells = gameState.currentPiece.getOccupiedCells()
-            for (cell in cells) {
-                if (cell.y in 0 until TetrisGameState.BOARD_HEIGHT && cell.x in 0 until TetrisGameState.BOARD_WIDTH) {
-                    val left = cell.x * cellW + gap
-                    val top = cell.y * cellH + gap
-                    val w = cellW - gap * 2
-                    val h = cellH - gap * 2
-
-                    drawBlock(
-                        left = left,
-                        top = top,
-                        w = w,
-                        h = h,
-                        color = skin.getBlockColor(gameState.currentPiece.type.id),
-                        isOutlineOnly = false
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = offsetY.coerceIn(20f, 250f).dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = popup.message,
+                    color = popup.color.copy(alpha = alpha),
+                    fontSize = if (popup.isTetris) 20.sp else 15.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = FontFamily.Monospace,
+                    letterSpacing = 2.sp,
+                    modifier = Modifier
+                        .background(
+                            color = skin.lcdBackground.copy(alpha = 0.9f * alpha),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = popup.color.copy(alpha = alpha * 0.8f),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                )
             }
         }
     }

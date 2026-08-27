@@ -191,7 +191,7 @@ fun PhysicalControllersRow(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .offset(y = verticalOffset.dp.coerceIn((-16).dp, 16.dp))
+            .offset(y = verticalOffset.dp.coerceIn((-4).dp, 20.dp))
     ) {
         val availableWidth = maxWidth
         val maxSingleWidth = (availableWidth - 8.dp) / 2.05f

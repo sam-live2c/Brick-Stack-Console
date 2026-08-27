@@ -27,6 +27,10 @@ class TetrisEngine(
     private var isLevelUpBannerVisible = false
     private var elapsedTimeSeconds = 0
     private var timeRemainingSeconds = 120
+    private var lineClearTrigger = 0L
+    private var clearingLines = emptyList<Int>()
+    private var lastClearedCount = 0
+    private var lastActionMessage: String? = null
 
     fun setHighScore(savedHighScore: Int) {
         highScore = savedHighScore
@@ -51,6 +55,10 @@ class TetrisEngine(
         elapsedTimeSeconds = 0
         timeRemainingSeconds = 120
         isLevelUpBannerVisible = false
+        lineClearTrigger = 0L
+        clearingLines = emptyList()
+        lastClearedCount = 0
+        lastActionMessage = null
         holdPieceType = null
         canHold = true
         nextPieceType = getRandomPieceFromBag()
@@ -328,6 +336,17 @@ class TetrisEngine(
             onHapticEvent(HapticEffectEvent.LEVEL_UP)
         }
 
+        lineClearTrigger++
+        clearingLines = rowsToClear
+        lastClearedCount = clearedCount
+        lastActionMessage = when {
+            clearedCount == 4 -> "TETRIS!!"
+            clearedCount == 3 -> "TRIPLE!"
+            clearedCount == 2 -> "DOUBLE!"
+            combo > 1 -> "COMBO x$combo!"
+            else -> "SINGLE!"
+        }
+
         // Haptics & Audio based on cleared count
         when (clearedCount) {
             1 -> {
@@ -432,7 +451,11 @@ class TetrisEngine(
             speedMultiplier = speedMultiplier,
             isLevelUpBannerVisible = isLevelUpBannerVisible,
             elapsedTimeSeconds = elapsedTimeSeconds,
-            timeRemainingSeconds = timeRemainingSeconds
+            timeRemainingSeconds = timeRemainingSeconds,
+            clearingLines = clearingLines,
+            lineClearTrigger = lineClearTrigger,
+            lastClearedCount = lastClearedCount,
+            lastActionMessage = lastActionMessage
         )
     }
 

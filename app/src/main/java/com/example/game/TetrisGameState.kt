@@ -55,6 +55,8 @@ data class TetrisGameState(
     val elapsedTimeSeconds: Int = 0,
     val timeRemainingSeconds: Int = 120,
     val clearingLines: List<Int> = emptyList(), // Rows currently in clearing animation
+    val lineClearTrigger: Long = 0L,
+    val lastClearedCount: Int = 0,
     val lastActionMessage: String? = null
 ) {
     override fun equals(other: Any?): Boolean {
@@ -82,6 +84,8 @@ data class TetrisGameState(
         if (holdPiece != other.holdPiece) return false
         if (canHold != other.canHold) return false
         if (clearingLines != other.clearingLines) return false
+        if (lineClearTrigger != other.lineClearTrigger) return false
+        if (lastClearedCount != other.lastClearedCount) return false
         if (lastActionMessage != other.lastActionMessage) return false
 
         for (i in 0 until BOARD_HEIGHT) {
@@ -101,6 +105,7 @@ data class TetrisGameState(
         result = 31 * result + status.hashCode()
         result = 31 * result + gameMode.hashCode()
         result = 31 * result + (currentPiece?.hashCode() ?: 0)
+        result = 31 * result + lineClearTrigger.hashCode()
         return result
     }
 

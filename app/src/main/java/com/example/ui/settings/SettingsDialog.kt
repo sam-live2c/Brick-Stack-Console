@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -68,15 +71,20 @@ fun SettingsDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Card(
+        Surface(
             modifier = Modifier.fillMaxSize(),
-            shape = RectangleShape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            color = MaterialTheme.colorScheme.surface
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
             ) {
                 // Header (Fixed against scroll)
                 Row(
@@ -450,18 +458,23 @@ fun SettingsDialog(
 
                             // Vertical Offset slider
                             Text(
-                                text = "Vertical Offset (${if (settings.controllerVerticalOffset >= 0) "+${settings.controllerVerticalOffset}" else settings.controllerVerticalOffset} dp)",
+                                text = "Controller Height / Vertical Offset (${if (settings.controllerVerticalOffset >= 0) "+${settings.controllerVerticalOffset}" else settings.controllerVerticalOffset} dp)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
                             )
+                            Text(
+                                text = "Adjust controller height below options row (cannot overlap PAUSE/RESET buttons)",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             Slider(
-                                value = settings.controllerVerticalOffset.toFloat(),
+                                value = settings.controllerVerticalOffset.coerceIn(-4, 20).toFloat(),
                                 onValueChange = { offsetVal ->
                                     val newS = settings.copy(controllerVerticalOffset = offsetVal.roundToInt())
                                     settings = newS
                                     onSaveSettings(newS)
                                 },
-                                valueRange = -25f..35f,
+                                valueRange = -4f..20f,
                                 steps = 11,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -469,7 +482,7 @@ fun SettingsDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                listOf("Low (-15)" to -15, "Center (0)" to 0, "High (+15)" to 15, "Top (+30)" to 30).forEach { (label, offsetVal) ->
+                                listOf("Top (0)" to 0, "Mid (+6)" to 6, "Low (+12)" to 12, "Bottom (+18)" to 18).forEach { (label, offsetVal) ->
                                     TextButton(
                                         onClick = {
                                             val newS = settings.copy(controllerVerticalOffset = offsetVal)
