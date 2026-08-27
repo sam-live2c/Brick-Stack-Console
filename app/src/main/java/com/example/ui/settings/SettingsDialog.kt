@@ -148,39 +148,26 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(4.dp))
 
                     val currentSpeedOpt = com.example.data.SpeedOption.fromMultiplier(settings.speedMultiplier)
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         com.example.data.SpeedOption.values().toList().chunked(3).forEach { chunk ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 chunk.forEach { opt ->
                                     val isSelected = currentSpeedOpt == opt
-                                    TextButton(
+                                    OptionCapsule(
+                                        text = opt.label,
+                                        subText = opt.scoreModifierLabel,
+                                        isSelected = isSelected,
                                         onClick = {
                                             val newS = settings.copy(speedMultiplier = opt.multiplier)
                                             settings = newS
                                             onSaveSettings(newS)
                                         },
                                         modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    ) {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(
-                                                opt.label,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                opt.scoreModifierLabel,
-                                                fontSize = 8.sp,
-                                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
+                                        height = 36.dp
+                                    )
                                 }
                             }
                         }
@@ -209,7 +196,7 @@ fun SettingsScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         val presets = listOf(
                             "EASY" to 1,
@@ -218,18 +205,18 @@ fun SettingsScreen(
                             "INSANE" to 9
                         )
                         presets.forEach { (label, lvl) ->
-                            TextButton(
+                            val isSelected = settings.startLevel == lvl
+                            OptionCapsule(
+                                text = label,
+                                isSelected = isSelected,
                                 onClick = {
                                     val newS = settings.copy(startLevel = lvl)
                                     settings = newS
                                     onSaveSettings(newS)
                                 },
-                                colors = ButtonDefaults.textButtonColors(
-                                    containerColor = if (settings.startLevel == lvl) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                )
-                            ) {
-                                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                            }
+                                modifier = Modifier.weight(1f),
+                                height = 32.dp
+                            )
                         }
                     }
 
@@ -299,23 +286,24 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         HapticIntensity.values().forEach { intensity ->
-                            TextButton(
+                            val isSelected = settings.hapticIntensity == intensity
+                            OptionCapsule(
+                                text = intensity.name,
+                                isSelected = isSelected,
                                 onClick = {
                                     val newS = settings.copy(hapticIntensity = intensity)
                                     settings = newS
                                     onSaveSettings(newS)
                                 },
-                                colors = ButtonDefaults.textButtonColors(
-                                    containerColor = if (settings.hapticIntensity == intensity) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                )
-                            ) {
-                                Text(intensity.name, fontSize = 11.sp)
-                            }
+                                modifier = Modifier.weight(1f),
+                                height = 32.dp
+                            )
                         }
                     }
 
@@ -373,21 +361,21 @@ fun SettingsScreen(
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 listOf("85%" to 0.85f, "100%" to 1.0f, "115%" to 1.15f, "130%" to 1.30f).forEach { (label, scaleVal) ->
-                                    TextButton(
+                                    val isSelected = kotlin.math.abs(settings.buttonScale - scaleVal) < 0.04f
+                                    OptionCapsule(
+                                        text = label,
+                                        isSelected = isSelected,
                                         onClick = {
                                             val newS = settings.copy(buttonScale = scaleVal)
                                             settings = newS
                                             onSaveSettings(newS)
                                         },
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (kotlin.math.abs(settings.buttonScale - scaleVal) < 0.04f) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                        )
-                                    ) {
-                                        Text(label, fontSize = 10.sp)
-                                    }
+                                        modifier = Modifier.weight(1f),
+                                        height = 30.dp
+                                    )
                                 }
                             }
                         }
@@ -422,31 +410,24 @@ fun SettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text("Hand Mode", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                                Row {
-                                    TextButton(
-                                        onClick = {
-                                            val newS = settings.copy(leftHandedMode = false)
-                                            settings = newS
-                                            onSaveSettings(newS)
-                                        },
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (!settings.leftHandedMode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    listOf("Left D-Pad" to false, "Right D-Pad" to true).forEach { (label, isRight) ->
+                                        val isSelected = settings.leftHandedMode == isRight
+                                        OptionCapsule(
+                                            text = label,
+                                            isSelected = isSelected,
+                                            onClick = {
+                                                val newS = settings.copy(leftHandedMode = isRight)
+                                                settings = newS
+                                                onSaveSettings(newS)
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            height = 32.dp
                                         )
-                                    ) {
-                                        Text("Left D-Pad", fontSize = 10.sp)
-                                    }
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    TextButton(
-                                        onClick = {
-                                            val newS = settings.copy(leftHandedMode = true)
-                                            settings = newS
-                                            onSaveSettings(newS)
-                                        },
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (settings.leftHandedMode) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                        )
-                                    ) {
-                                        Text("Right D-Pad", fontSize = 10.sp)
                                     }
                                 }
                             }
@@ -477,21 +458,21 @@ fun SettingsScreen(
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 listOf("Top (0)" to 0, "Mid (+6)" to 6, "Low (+12)" to 12, "Bottom (+18)" to 18).forEach { (label, offsetVal) ->
-                                    TextButton(
+                                    val isSelected = settings.controllerVerticalOffset == offsetVal
+                                    OptionCapsule(
+                                        text = label,
+                                        isSelected = isSelected,
                                         onClick = {
                                             val newS = settings.copy(controllerVerticalOffset = offsetVal)
                                             settings = newS
                                             onSaveSettings(newS)
                                         },
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (settings.controllerVerticalOffset == offsetVal) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                        )
-                                    ) {
-                                        Text(label, fontSize = 10.sp)
-                                    }
+                                        modifier = Modifier.weight(1f),
+                                        height = 30.dp
+                                    )
                                 }
                             }
                         }
@@ -524,23 +505,21 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 ActionButtonLayout.values().forEach { layout ->
                                     val isSelected = settings.actionButtonLayout == layout
-                                    TextButton(
+                                    OptionCapsule(
+                                        text = layout.label,
+                                        isSelected = isSelected,
                                         onClick = {
                                             val newS = settings.copy(actionButtonLayout = layout)
                                             settings = newS
                                             onSaveSettings(newS)
                                         },
                                         modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                        )
-                                    ) {
-                                        Text(layout.label, fontSize = 10.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, maxLines = 1)
-                                    }
+                                        height = 32.dp
+                                    )
                                 }
                             }
 
@@ -551,7 +530,7 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 val presets = listOf(
                                     "Default" to Quadruple(ActionButtonType.HOLD, ActionButtonType.HARD_DROP, ActionButtonType.ROTATE_LEFT, ActionButtonType.ROTATE_RIGHT),
@@ -564,7 +543,9 @@ fun SettingsScreen(
                                             settings.button2Action == quad.second &&
                                             settings.button3Action == quad.third &&
                                             settings.button4Action == quad.fourth
-                                    TextButton(
+                                    OptionCapsule(
+                                        text = label,
+                                        isSelected = isMatch,
                                         onClick = {
                                             val newS = settings.copy(
                                                 button1Action = quad.first,
@@ -575,12 +556,9 @@ fun SettingsScreen(
                                             settings = newS
                                             onSaveSettings(newS)
                                         },
-                                        colors = ButtonDefaults.textButtonColors(
-                                            containerColor = if (isMatch) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                                        )
-                                    ) {
-                                        Text(label, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    }
+                                        modifier = Modifier.weight(1f),
+                                        height = 32.dp
+                                    )
                                 }
                             }
 
@@ -607,10 +585,12 @@ fun SettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(slotName, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1.1f))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         ActionButtonType.values().forEach { action ->
                                             val isSelected = currentActions[index] == action
-                                            TextButton(
+                                            OptionCapsule(
+                                                text = action.shortLabel,
+                                                isSelected = isSelected,
                                                 onClick = {
                                                     val list = mutableListOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
                                                     val oldAction = list[index]
@@ -630,18 +610,9 @@ fun SettingsScreen(
                                                         onSaveSettings(newS)
                                                     }
                                                 },
-                                                colors = ButtonDefaults.textButtonColors(
-                                                    containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                                                ),
-                                                modifier = Modifier.height(28.dp)
-                                            ) {
-                                                Text(
-                                                    text = action.shortLabel,
-                                                    fontSize = 8.sp,
-                                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                                )
-                                            }
+                                                modifier = Modifier.width(42.dp),
+                                                height = 28.dp
+                                            )
                                         }
                                     }
                                 }
@@ -826,6 +797,58 @@ private fun SettingSwitchRow(
             Text(text = subtitle, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun OptionCapsule(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: androidx.compose.ui.unit.Dp = 32.dp,
+    subText: String? = null
+) {
+    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+
+    Box(
+        modifier = modifier
+            .height(height)
+            .clip(CircleShape)
+            .background(containerColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (subText != null) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = text,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = contentColor,
+                    maxLines = 1
+                )
+                Text(
+                    text = subText,
+                    fontSize = 8.sp,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+        } else {
+            Text(
+                text = text,
+                fontSize = 10.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = contentColor,
+                maxLines = 1
+            )
+        }
     }
 }
 

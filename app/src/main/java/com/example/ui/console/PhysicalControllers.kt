@@ -567,16 +567,14 @@ fun ActionButtonsCluster(
             ActionButtonLayout.DIAMOND -> {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxSize()
+                    verticalArrangement = Arrangement.Center
                 ) {
                     RenderSingleActionButton(button1Action, show1, "showActionButton1")
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RenderSingleActionButton(button3Action, show3, "showActionButton3")
+                        Spacer(modifier = Modifier.size(buttonSize))
                         RenderSingleActionButton(button2Action, show2, "showActionButton2")
                     }
                 }
