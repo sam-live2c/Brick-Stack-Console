@@ -110,7 +110,7 @@ fun SystemPillButtonsRow(
             val showReset = userSettings?.showSystemReset != false
             if (onToggleKey != null || showReset) {
                 SystemSmallButton(
-                    label = "RESET",
+                    label = "RESTART",
                     icon = Icons.Default.Refresh,
                     skin = skin,
                     buttonWidth = buttonWidth,
@@ -175,11 +175,6 @@ private fun SystemSmallButton(
                             skin.systemButtonColor.copy(alpha = 0.7f * alpha)
                         )
                     )
-                )
-                .border(
-                    1.dp,
-                    if (alpha < 0.5f) Color.Red.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.2f),
-                    RoundedCornerShape(11.dp)
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -391,7 +386,6 @@ fun DPadController(
                     modifier = Modifier
                         .size(pivotSize)
                         .background(skin.dpadColor)
-                        .border(1.dp, Color.Black.copy(alpha = 0.3f))
                 ) {
                     Box(
                         modifier = Modifier
@@ -461,11 +455,6 @@ private fun DPadSegmentButton(
                 if (isPressed) skin.dpadColor.copy(alpha = 0.7f * alpha)
                 else skin.dpadColor.copy(alpha = alpha)
             )
-            .border(
-                1.dp,
-                if (alpha < 0.5f) Color.Red.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.15f),
-                shape
-            )
             .clickable {
                 isPressed = true
                 onClick()
@@ -518,8 +507,8 @@ fun ActionButtonsCluster(
         ActionButtonItem(4, button4Action, show4, "showActionButton4")
     )
 
-    // Filter to active (visible) items only - NO empty slots!
-    val activeItems = allItems.filter { it.isVisible }
+    // Filter to active items, but in Live Preview mode (onToggleKey != null) keep all items visible/dimmed so user can tap to unhide!
+    val activeItems = if (onToggleKey != null) allItems else allItems.filter { it.isVisible }
 
     val isLinearRow = (buttonLayout == ActionButtonLayout.LINE_ROW)
     val buttonSize = if (isLinearRow && activeItems.size >= 4) {
@@ -723,11 +712,6 @@ private fun UniformRoundActionButton(
                 .shadow(if (alpha < 0.5f) 0.dp else (if (isPressed) 1.dp else 2.dp), CircleShape)
                 .clip(CircleShape)
                 .background(if (isPressed) color.copy(alpha = 0.8f * alpha) else color.copy(alpha = alpha))
-                .border(
-                    1.dp,
-                    if (alpha < 0.5f) Color.Red.copy(alpha = 0.5f) else Color.Black.copy(alpha = 0.25f),
-                    CircleShape
-                )
                 .clickable {
                     isPressed = true
                     onClick()

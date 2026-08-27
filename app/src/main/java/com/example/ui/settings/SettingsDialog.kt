@@ -23,7 +23,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
+import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RotateLeft
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,6 +52,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -651,6 +656,8 @@ fun SettingsScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
+                            val activeSkin = ConsoleSkin.getById(settings.themeIndex)
+
                             // 3. Position Presets
                             Text("Quick Position Presets", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(4.dp))
@@ -669,6 +676,7 @@ fun SettingsScreen(
                                             settings.button2Action == quad.second &&
                                             settings.button3Action == quad.third &&
                                             settings.button4Action == quad.fourth
+
                                     OptionCapsule(
                                         text = label,
                                         isSelected = isMatch,
@@ -689,8 +697,6 @@ fun SettingsScreen(
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
-
-
 
                             // 4. Custom Position Remapping
                             Text("Custom Button Positions (Remap Slots)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
@@ -727,34 +733,68 @@ fun SettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(slotName, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1.1f))
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        modifier = Modifier.weight(2f),
+                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                    ) {
                                         ActionButtonType.values().forEach { action ->
                                             val isSelected = currentActions[btnIndex] == action
-                                            OptionCapsule(
-                                                text = action.shortLabel,
-                                                isSelected = isSelected,
-                                                onClick = {
-                                                    val list = mutableListOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
-                                                    val oldAction = list[btnIndex]
-                                                    if (oldAction != action) {
-                                                        val dupIdx = list.indexOf(action)
-                                                        if (dupIdx != -1) {
-                                                            list[dupIdx] = oldAction
+                                            val actionColor = getActionButtonColor(action, activeSkin)
+                                            val icon = getActionButtonIcon(action)
+
+                                            val containerBg = if (isSelected) actionColor else Color(0xFF2E2A24)
+                                            val contentColor = if (isSelected) Color.White else actionColor
+                                            val textColor = if (isSelected) Color.White else Color(0xFFC4C0B5)
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .height(30.dp)
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(containerBg)
+
+                                                    .clickable {
+                                                        val list = mutableListOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
+                                                        val oldAction = list[btnIndex]
+                                                        if (oldAction != action) {
+                                                            val dupIdx = list.indexOf(action)
+                                                            if (dupIdx != -1) {
+                                                                list[dupIdx] = oldAction
+                                                            }
+                                                            list[btnIndex] = action
+                                                            val newS = settings.copy(
+                                                                button1Action = list[0],
+                                                                button2Action = list[1],
+                                                                button3Action = list[2],
+                                                                button4Action = list[3]
+                                                            )
+                                                            settings = newS
+                                                            onSaveSettings(newS)
                                                         }
-                                                        list[btnIndex] = action
-                                                        val newS = settings.copy(
-                                                            button1Action = list[0],
-                                                            button2Action = list[1],
-                                                            button3Action = list[2],
-                                                            button4Action = list[3]
-                                                        )
-                                                        settings = newS
-                                                        onSaveSettings(newS)
-                                                    }
-                                                },
-                                                modifier = Modifier.width(42.dp),
-                                                height = 28.dp
-                                            )
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = icon,
+                                                        contentDescription = action.shortLabel,
+                                                        tint = contentColor,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(2.dp))
+                                                    Text(
+                                                        text = action.shortLabel,
+                                                        fontSize = 7.5.sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                        color = textColor,
+                                                        maxLines = 1
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -762,7 +802,6 @@ fun SettingsScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // 4. Live Mini Preview & Interactive Button Toggling
                             val toggleButtonVisibility: (String) -> Unit = { key ->
                                 val newS = when (key) {
                                     "showDpadUp" -> settings.copy(showDpadUp = !settings.showDpadUp)
@@ -783,13 +822,133 @@ fun SettingsScreen(
                                 onSaveSettings(newS)
                             }
 
+                            // 5. Button Visibility & Selection Toggles
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Action Buttons Selection & Visibility",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "Restore All",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF755812))
+                                        .clickable {
+                                            val newS = settings.copy(
+                                                showActionButton1 = true,
+                                                showActionButton2 = true,
+                                                showActionButton3 = true,
+                                                showActionButton4 = true,
+                                                showDpadUp = true,
+                                                showDpadDown = true,
+                                                showDpadLeft = true,
+                                                showDpadRight = true,
+                                                showSystemPause = true,
+                                                showSystemReset = true,
+                                                showSystemSound = true,
+                                                showSystemOption = true
+                                            )
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Toggle buttons ON / OFF directly or tap on Live Preview",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                val actionVisItems = listOf(
+                                    Quadruple("B1", settings.button1Action, settings.showActionButton1, "showActionButton1"),
+                                    Quadruple("B2", settings.button2Action, settings.showActionButton2, "showActionButton2"),
+                                    Quadruple("B3", settings.button3Action, settings.showActionButton3, "showActionButton3"),
+                                    Quadruple("B4", settings.button4Action, settings.showActionButton4, "showActionButton4")
+                                )
+
+                                actionVisItems.forEach { (slotLabel, actionType, isVisible, key) ->
+                                    val actionColor = getActionButtonColor(actionType, activeSkin)
+                                    val icon = getActionButtonIcon(actionType)
+
+                                    val containerBg = if (isVisible) actionColor else Color(0xFF2E2A24)
+                                    val iconBg = if (isVisible) Color.Black.copy(alpha = 0.25f) else actionColor.copy(alpha = 0.2f)
+                                    val contentColor = if (isVisible) Color.White else actionColor.copy(alpha = 0.7f)
+                                    val textColor = if (isVisible) Color.White else Color(0xFF88847A)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(34.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(containerBg)
+
+                                            .clickable { toggleButtonVisibility(key) }
+                                            .padding(horizontal = 2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = if (isVisible) "✓ " else "✗ ",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = textColor
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(16.dp)
+                                                    .clip(CircleShape)
+                                                    .background(iconBg),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = icon,
+                                                    contentDescription = actionType.shortLabel,
+                                                    tint = contentColor,
+                                                    modifier = Modifier.size(11.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text(
+                                                text = "$slotLabel:${actionType.shortLabel}",
+                                                fontSize = 8.sp,
+                                                fontWeight = if (isVisible) FontWeight.Bold else FontWeight.Medium,
+                                                color = textColor,
+                                                maxLines = 1
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 6. Live Mini Preview & Interactive Button Toggling
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text("Live Layout Preview", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-                                Text("(Tap any button to show / remove)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("(Tap any button to toggle ON/OFF)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Spacer(modifier = Modifier.height(4.dp))
 
@@ -996,3 +1155,17 @@ private fun OptionCapsule(
 }
 
 private data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+
+private fun getActionButtonIcon(action: ActionButtonType): ImageVector = when (action) {
+    ActionButtonType.HOLD -> Icons.Default.PanTool
+    ActionButtonType.HARD_DROP -> Icons.Default.KeyboardDoubleArrowDown
+    ActionButtonType.ROTATE_LEFT -> Icons.Default.RotateLeft
+    ActionButtonType.ROTATE_RIGHT -> Icons.Default.RotateRight
+}
+
+private fun getActionButtonColor(action: ActionButtonType, skin: ConsoleSkin): Color = when (action) {
+    ActionButtonType.HOLD -> skin.actionButtonColorHold
+    ActionButtonType.HARD_DROP -> skin.actionButtonColorDrop
+    ActionButtonType.ROTATE_LEFT -> skin.actionButtonColorRotateLeft
+    ActionButtonType.ROTATE_RIGHT -> skin.actionButtonColorRotateRight
+}
