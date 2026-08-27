@@ -77,7 +77,7 @@ fun SettingsScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = Color(0xFF0D111A)
     ) {
         Column(
             modifier = Modifier
@@ -89,7 +89,7 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
+                    .background(Color(0xFF0D111A))
                     .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -99,7 +99,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back to Game",
-                        tint = MaterialTheme.colorScheme.onBackground
+                        tint = Color.White
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -108,7 +108,7 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = Color.White
                 )
             }
 
@@ -229,8 +229,8 @@ fun SettingsScreen(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(
-                                        if (settings.themeIndex == skin.id) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant
+                                        if (settings.themeIndex == skin.id) Color(0xFF755812)
+                                        else Color(0xFF38342D)
                                     )
                                     .clickable {
                                         val newS = settings.copy(themeIndex = skin.id)
@@ -252,6 +252,7 @@ fun SettingsScreen(
                                     text = skin.name,
                                     fontWeight = if (settings.themeIndex == skin.id) FontWeight.Bold else FontWeight.Normal,
                                     fontSize = 13.sp,
+                                    color = if (settings.themeIndex == skin.id) Color(0xFFF0C243) else Color(0xFFC4C0B5),
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (settings.themeIndex == skin.id) {
@@ -259,11 +260,11 @@ fun SettingsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Check,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = Color(0xFFF0C243),
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
-                                        Text("SELECTED", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                        Text("SELECTED", fontSize = 11.sp, color = Color(0xFFF0C243), fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -644,7 +645,9 @@ fun SettingsScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // 3. Custom Position Remapping
+
+
+                            // 4. Custom Position Remapping
                             Text("Custom Button Positions (Remap Slots)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(4.dp))
 
@@ -903,8 +906,8 @@ private fun OptionCapsule(
     height: androidx.compose.ui.unit.Dp = 32.dp,
     subText: String? = null
 ) {
-    val containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-    val contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+    val containerColor = if (isSelected) Color(0xFF755812) else Color(0xFF38342D)
+    val contentColor = if (isSelected) Color(0xFFF0C243) else Color(0xFFC4C0B5)
 
     Box(
         modifier = modifier
@@ -931,7 +934,7 @@ private fun OptionCapsule(
                     text = subText,
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Normal,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (isSelected) Color(0xFFF0C243).copy(alpha = 0.85f) else Color(0xFF9E9A8E),
                     maxLines = 1
                 )
             }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -231,7 +232,13 @@ fun PhysicalControllersRow(
         val dpadVOffset = (userSettings?.dpadVerticalOffset ?: verticalOffset).coerceIn(-16, 16).dp
         val actionVOffset = (userSettings?.actionButtonsVerticalOffset ?: verticalOffset).coerceIn(-16, 16).dp
         val hSpacing = (userSettings?.controllerHorizontalSpacing ?: 0).coerceIn(-16, 16)
-        val horizontalOuterPadding = (10.dp - (hSpacing.dp * 0.45f)).coerceIn(0.dp, 26.dp)
+        val buttonLayout = userSettings?.actionButtonLayout ?: ActionButtonLayout.GRID_2X2
+        val isLinearRow = (buttonLayout == ActionButtonLayout.LINE_ROW)
+        val horizontalOuterPadding = if (isLinearRow) {
+            2.dp
+        } else {
+            (10.dp - (hSpacing.dp * 0.45f)).coerceIn(0.dp, 26.dp)
+        }
 
         Row(
             modifier = Modifier
@@ -475,6 +482,13 @@ private fun DPadSegmentButton(
     }
 }
 
+private data class ActionButtonItem(
+    val slotIndex: Int,
+    val actionType: ActionButtonType,
+    val isVisible: Boolean,
+    val keyName: String
+)
+
 @Composable
 fun ActionButtonsCluster(
     size: Dp = 140.dp,
@@ -492,38 +506,51 @@ fun ActionButtonsCluster(
     skin: ConsoleSkin,
     modifier: Modifier = Modifier
 ) {
-    val buttonSize = (size * 0.28f).coerceIn(24.dp, 44.dp)
-    val iconSize = (buttonSize * 0.48f).coerceIn(10.dp, 20.dp)
-    val textSize = (size.value * 0.05f).coerceIn(5.5f, 9.5f).sp
-
     val show1 = userSettings?.showActionButton1 ?: true
     val show2 = userSettings?.showActionButton2 ?: true
     val show3 = userSettings?.showActionButton3 ?: true
     val show4 = userSettings?.showActionButton4 ?: true
 
+    val allItems = listOf(
+        ActionButtonItem(1, button1Action, show1, "showActionButton1"),
+        ActionButtonItem(2, button2Action, show2, "showActionButton2"),
+        ActionButtonItem(3, button3Action, show3, "showActionButton3"),
+        ActionButtonItem(4, button4Action, show4, "showActionButton4")
+    )
+
+    // Filter to active (visible) items only - NO empty slots!
+    val activeItems = allItems.filter { it.isVisible }
+
+    val isLinearRow = (buttonLayout == ActionButtonLayout.LINE_ROW)
+    val buttonSize = if (isLinearRow && activeItems.size >= 4) {
+        (size * 0.22f).coerceIn(20.dp, 36.dp)
+    } else if (isLinearRow && activeItems.size == 3) {
+        (size * 0.24f).coerceIn(22.dp, 38.dp)
+    } else {
+        (size * 0.28f).coerceIn(24.dp, 44.dp)
+    }
+    val iconSize = (buttonSize * 0.48f).coerceIn(10.dp, 20.dp)
+    val textSize = (buttonSize.value * 0.22f).coerceIn(5.5f, 9.5f).sp
+
     @Composable
-    fun RenderSingleActionButton(actionType: ActionButtonType, isVisible: Boolean, keyName: String) {
-        if (onToggleKey == null && !isVisible) {
-            Box(modifier = Modifier.size(buttonSize))
-            return
-        }
-        val icon = when (actionType) {
+    fun RenderItem(item: ActionButtonItem) {
+        val icon = when (item.actionType) {
             ActionButtonType.HOLD -> Icons.Default.PanTool
             ActionButtonType.HARD_DROP -> Icons.Default.KeyboardDoubleArrowDown
             ActionButtonType.ROTATE_LEFT -> Icons.Default.RotateLeft
             ActionButtonType.ROTATE_RIGHT -> Icons.Default.RotateRight
         }
-        val label = actionType.shortLabel
-        val color = when (actionType) {
+        val label = item.actionType.shortLabel
+        val color = when (item.actionType) {
             ActionButtonType.HOLD -> skin.actionButtonColorHold
             ActionButtonType.HARD_DROP -> skin.actionButtonColorDrop
             ActionButtonType.ROTATE_LEFT -> skin.actionButtonColorRotateLeft
             ActionButtonType.ROTATE_RIGHT -> skin.actionButtonColorRotateRight
         }
         val onClick = if (onToggleKey != null) {
-            { onToggleKey(keyName) }
+            { onToggleKey(item.keyName) }
         } else {
-            when (actionType) {
+            when (item.actionType) {
                 ActionButtonType.HOLD -> onHold
                 ActionButtonType.HARD_DROP -> onHardDrop
                 ActionButtonType.ROTATE_LEFT -> onRotateLeft
@@ -540,66 +567,132 @@ fun ActionButtonsCluster(
             iconSize = iconSize,
             textSize = textSize,
             onClick = onClick,
-            alpha = if (isVisible) 1.0f else 0.25f
+            alpha = if (item.isVisible) 1.0f else 0.25f
         )
     }
 
     Box(
         modifier = modifier
-            .size(size)
+            .defaultMinSize(minWidth = size, minHeight = size)
             .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
-        when (buttonLayout) {
-            ActionButtonLayout.GRID_2X2 -> {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RenderSingleActionButton(button1Action, show1, "showActionButton1")
-                        RenderSingleActionButton(button2Action, show2, "showActionButton2")
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RenderSingleActionButton(button3Action, show3, "showActionButton3")
-                        RenderSingleActionButton(button4Action, show4, "showActionButton4")
-                    }
-                }
+        when (activeItems.size) {
+            0 -> {
+                // All buttons disabled
+                Text(
+                    text = "NO BTNS",
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = skin.brandTextColor.copy(alpha = 0.35f)
+                )
             }
-            ActionButtonLayout.DIAMOND -> {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    RenderSingleActionButton(button1Action, show1, "showActionButton1")
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RenderSingleActionButton(button3Action, show3, "showActionButton3")
-                        Spacer(modifier = Modifier.size(buttonSize))
-                        RenderSingleActionButton(button2Action, show2, "showActionButton2")
-                    }
-                }
+            1 -> {
+                // 1 Button: Centered perfectly
+                RenderItem(activeItems[0])
             }
-            ActionButtonLayout.LINE_ROW -> {
+            2 -> {
+                // 2 Buttons: Compact centered pair
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    RenderSingleActionButton(button1Action, show1, "showActionButton1")
-                    RenderSingleActionButton(button2Action, show2, "showActionButton2")
-                    RenderSingleActionButton(button3Action, show3, "showActionButton3")
-                    RenderSingleActionButton(button4Action, show4, "showActionButton4")
+                    RenderItem(activeItems[0])
+                    RenderItem(activeItems[1])
+                }
+            }
+            3 -> {
+                // 3 Buttons: Dynamic reflow according to layout preference
+                if (buttonLayout == ActionButtonLayout.LINE_ROW) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RenderItem(activeItems[0])
+                        RenderItem(activeItems[1])
+                        RenderItem(activeItems[2])
+                    }
+                } else if (buttonLayout == ActionButtonLayout.DIAMOND) {
+                    // Pyramid layout (1 top, 2 bottom)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        RenderItem(activeItems[0])
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RenderItem(activeItems[1])
+                            RenderItem(activeItems[2])
+                        }
+                    }
+                } else {
+                    // GRID_2X2 for 3 buttons (2 top, 1 bottom centered)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RenderItem(activeItems[0])
+                            RenderItem(activeItems[1])
+                        }
+                        RenderItem(activeItems[2])
+                    }
+                }
+            }
+            4 -> {
+                // 4 Buttons: Full layout
+                if (buttonLayout == ActionButtonLayout.LINE_ROW) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RenderItem(activeItems[0])
+                        RenderItem(activeItems[1])
+                        RenderItem(activeItems[2])
+                        RenderItem(activeItems[3])
+                    }
+                } else if (buttonLayout == ActionButtonLayout.DIAMOND) {
+                    // Diamond: 1 top, 2 middle, 1 bottom
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        RenderItem(activeItems[0])
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RenderItem(activeItems[2])
+                            RenderItem(activeItems[1])
+                        }
+                        RenderItem(activeItems[3])
+                    }
+                } else {
+                    // GRID_2X2: 2 top, 2 bottom
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RenderItem(activeItems[0])
+                            RenderItem(activeItems[1])
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RenderItem(activeItems[2])
+                            RenderItem(activeItems[3])
+                        }
+                    }
                 }
             }
         }
