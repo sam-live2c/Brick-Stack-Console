@@ -606,7 +606,52 @@ fun SettingsScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // 2. Position Presets
+                            // 2. Action Buttons Inner Spacing Regulator
+                            Text(
+                                text = "Action Buttons Distance Maintainer (${if (settings.actionButtonsSpacing >= 0) "+${settings.actionButtonsSpacing}" else settings.actionButtonsSpacing} dp)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Regulate gap and distance maintainer among the 4 action buttons",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = settings.actionButtonsSpacing.coerceIn(-6, 16).toFloat(),
+                                onValueChange = { valSpac ->
+                                    val newS = settings.copy(actionButtonsSpacing = valSpac.roundToInt())
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                valueRange = -6f..16f,
+                                steps = 21,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf("Tight (-4)" to -4, "Normal (0)" to 0, "Medium (+6)" to 6, "Wide (+12)" to 12).forEach { (label, spacVal) ->
+                                    val isSelected = settings.actionButtonsSpacing == spacVal
+                                    OptionCapsule(
+                                        text = label,
+                                        isSelected = isSelected,
+                                        onClick = {
+                                            val newS = settings.copy(actionButtonsSpacing = spacVal)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        height = 30.dp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 3. Position Presets
                             Text("Quick Position Presets", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(

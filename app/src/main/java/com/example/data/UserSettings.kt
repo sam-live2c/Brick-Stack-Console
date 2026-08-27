@@ -58,6 +58,7 @@ data class UserSettings(
     val dpadVerticalOffset: Int = 0,
     val actionButtonsVerticalOffset: Int = 0,
     val controllerHorizontalSpacing: Int = 0,
+    val actionButtonsSpacing: Int = 0,
     val actionButtonLayout: ActionButtonLayout = ActionButtonLayout.GRID_2X2,
     val button1Action: ActionButtonType = ActionButtonType.HOLD,
     val button2Action: ActionButtonType = ActionButtonType.HARD_DROP,
@@ -101,6 +102,7 @@ class SettingsRepository(context: Context) {
             dpadVerticalOffset = prefs.getInt("dpadVerticalOffset", prefs.getInt("controllerVerticalOffset", 0)),
             actionButtonsVerticalOffset = prefs.getInt("actionButtonsVerticalOffset", prefs.getInt("controllerVerticalOffset", 0)),
             controllerHorizontalSpacing = prefs.getInt("controllerHorizontalSpacing", 0),
+            actionButtonsSpacing = prefs.getInt("actionButtonsSpacing", 0),
             actionButtonLayout = try {
                 ActionButtonLayout.valueOf(prefs.getString("actionButtonLayout", ActionButtonLayout.GRID_2X2.name) ?: ActionButtonLayout.GRID_2X2.name)
             } catch (e: Exception) { ActionButtonLayout.GRID_2X2 },
@@ -141,6 +143,7 @@ class SettingsRepository(context: Context) {
             .putInt("dpadVerticalOffset", settings.dpadVerticalOffset)
             .putInt("actionButtonsVerticalOffset", settings.actionButtonsVerticalOffset)
             .putInt("controllerHorizontalSpacing", settings.controllerHorizontalSpacing)
+            .putInt("actionButtonsSpacing", settings.actionButtonsSpacing)
             .putString("actionButtonLayout", settings.actionButtonLayout.name)
             .putString("button1Action", settings.button1Action.name)
             .putString("button2Action", settings.button2Action.name)

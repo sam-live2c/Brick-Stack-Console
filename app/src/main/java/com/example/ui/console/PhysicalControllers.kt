@@ -222,7 +222,7 @@ fun PhysicalControllersRow(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .offset(y = verticalOffset.dp.coerceIn((-24).dp, 20.dp))
+            .offset(y = (-5).dp + verticalOffset.dp.coerceIn((-24).dp, 20.dp))
     ) {
         val availableWidth = maxWidth
         val maxSingleWidth = (availableWidth - 8.dp) / 2.05f
@@ -531,6 +531,7 @@ fun ActionButtonsCluster(
     }
     val iconSize = (buttonSize * 0.48f).coerceIn(10.dp, 20.dp)
     val textSize = (buttonSize.value * 0.22f).coerceIn(5.5f, 9.5f).sp
+    val btnSpacingExtra = (userSettings?.actionButtonsSpacing ?: 0).dp
 
     @Composable
     fun RenderItem(item: ActionButtonItem) {
@@ -594,7 +595,7 @@ fun ActionButtonsCluster(
             2 -> {
                 // 2 Buttons: Compact centered pair
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy((8.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RenderItem(activeItems[0])
@@ -605,7 +606,7 @@ fun ActionButtonsCluster(
                 // 3 Buttons: Dynamic reflow according to layout preference
                 if (buttonLayout == ActionButtonLayout.LINE_ROW) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.spacedBy((6.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RenderItem(activeItems[0])
@@ -616,11 +617,11 @@ fun ActionButtonsCluster(
                     // Pyramid layout (1 top, 2 bottom)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy((4.dp + btnSpacingExtra * 0.7f).coerceAtLeast(1.dp))
                     ) {
                         RenderItem(activeItems[0])
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy((8.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RenderItem(activeItems[1])
@@ -631,10 +632,10 @@ fun ActionButtonsCluster(
                     // GRID_2X2 for 3 buttons (2 top, 1 bottom centered)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy((4.dp + btnSpacingExtra * 0.7f).coerceAtLeast(1.dp))
                     ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy((8.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RenderItem(activeItems[0])
@@ -648,7 +649,7 @@ fun ActionButtonsCluster(
                 // 4 Buttons: Full layout
                 if (buttonLayout == ActionButtonLayout.LINE_ROW) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy((4.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RenderItem(activeItems[0])
@@ -660,11 +661,11 @@ fun ActionButtonsCluster(
                     // Diamond: 1 top, 2 middle, 1 bottom
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        verticalArrangement = Arrangement.spacedBy((2.dp + btnSpacingExtra * 0.7f).coerceAtLeast(1.dp))
                     ) {
                         RenderItem(activeItems[0])
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy((10.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RenderItem(activeItems[2])
@@ -676,17 +677,17 @@ fun ActionButtonsCluster(
                     // GRID_2X2: 2 top, 2 bottom
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy((4.dp + btnSpacingExtra * 0.7f).coerceAtLeast(1.dp))
                     ) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy((8.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RenderItem(activeItems[0])
                             RenderItem(activeItems[1])
                         }
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy((8.dp + btnSpacingExtra).coerceAtLeast(1.dp)),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RenderItem(activeItems[2])
