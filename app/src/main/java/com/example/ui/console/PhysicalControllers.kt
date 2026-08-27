@@ -228,8 +228,15 @@ fun PhysicalControllersRow(
         val requestedSize = 126.dp * buttonScale
         val controllerSize = requestedSize.coerceAtMost(maxSingleWidth).coerceAtLeast(76.dp)
 
+        val dpadVOffset = (userSettings?.dpadVerticalOffset ?: verticalOffset).coerceIn(-16, 16).dp
+        val actionVOffset = (userSettings?.actionButtonsVerticalOffset ?: verticalOffset).coerceIn(-16, 16).dp
+        val hSpacing = (userSettings?.controllerHorizontalSpacing ?: 0).coerceIn(-16, 16)
+        val horizontalOuterPadding = (10.dp - (hSpacing.dp * 0.45f)).coerceIn(0.dp, 26.dp)
+
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalOuterPadding),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -243,7 +250,8 @@ fun PhysicalControllersRow(
                     onUp = onHardDrop,
                     userSettings = userSettings,
                     onToggleKey = onToggleKey,
-                    skin = skin
+                    skin = skin,
+                    modifier = Modifier.offset(y = dpadVOffset)
                 )
 
                 ActionButtonsCluster(
@@ -259,7 +267,8 @@ fun PhysicalControllersRow(
                     button4Action = userSettings?.button4Action ?: ActionButtonType.ROTATE_RIGHT,
                     userSettings = userSettings,
                     onToggleKey = onToggleKey,
-                    skin = skin
+                    skin = skin,
+                    modifier = Modifier.offset(y = actionVOffset)
                 )
             } else {
                 // Left-Handed: Action Buttons on Left, D-Pad on Right
@@ -276,7 +285,8 @@ fun PhysicalControllersRow(
                     button4Action = userSettings?.button4Action ?: ActionButtonType.ROTATE_RIGHT,
                     userSettings = userSettings,
                     onToggleKey = onToggleKey,
-                    skin = skin
+                    skin = skin,
+                    modifier = Modifier.offset(y = actionVOffset)
                 )
 
                 DPadController(
@@ -287,7 +297,8 @@ fun PhysicalControllersRow(
                     onUp = onHardDrop,
                     userSettings = userSettings,
                     onToggleKey = onToggleKey,
-                    skin = skin
+                    skin = skin,
+                    modifier = Modifier.offset(y = dpadVOffset)
                 )
             }
         }

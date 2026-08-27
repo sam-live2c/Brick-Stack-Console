@@ -77,7 +77,7 @@ fun SettingsScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color(0xFF0D111A)
+        color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -89,7 +89,7 @@ fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF0D111A))
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(horizontal = 12.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -99,7 +99,7 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back to Game",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
@@ -108,7 +108,7 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
 
@@ -139,39 +139,31 @@ fun SettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
 
+                    val speedOptions = com.example.data.SpeedOption.values()
+                    val currentSpeedOpt = com.example.data.SpeedOption.fromMultiplier(settings.speedMultiplier)
+                    val currentSpeedIdx = speedOptions.indexOf(currentSpeedOpt).coerceAtLeast(0)
+
                     Text(
-                        text = "Falling Speed Multiplier:",
+                        text = "Falling Speed Multiplier: ${currentSpeedOpt.label} (${currentSpeedOpt.scoreModifierLabel})",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
 
-                    val currentSpeedOpt = com.example.data.SpeedOption.fromMultiplier(settings.speedMultiplier)
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        com.example.data.SpeedOption.values().toList().chunked(3).forEach { chunk ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                chunk.forEach { opt ->
-                                    val isSelected = currentSpeedOpt == opt
-                                    OptionCapsule(
-                                        text = opt.label,
-                                        subText = opt.scoreModifierLabel,
-                                        isSelected = isSelected,
-                                        onClick = {
-                                            val newS = settings.copy(speedMultiplier = opt.multiplier)
-                                            settings = newS
-                                            onSaveSettings(newS)
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                        height = 36.dp
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    Slider(
+                        value = currentSpeedIdx.toFloat(),
+                        onValueChange = {
+                            val idx = it.roundToInt().coerceIn(0, speedOptions.size - 1)
+                            val selectedOpt = speedOptions[idx]
+                            val newS = settings.copy(speedMultiplier = selectedOpt.multiplier)
+                            settings = newS
+                            onSaveSettings(newS)
+                        },
+                        valueRange = 0f..(speedOptions.size - 1).toFloat(),
+                        steps = speedOptions.size - 2,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
 
                     Spacer(modifier = Modifier.height(10.dp))
 
@@ -434,39 +426,127 @@ fun SettingsScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // Vertical Offset slider
+                            // 1. Controller Distance Regulator (Horizontal Spacing)
                             Text(
-                                text = "Controller Height / Vertical Offset (${if (settings.controllerVerticalOffset >= 0) "+${settings.controllerVerticalOffset}" else settings.controllerVerticalOffset} dp)",
+                                text = "Distance Between Controllers (${if (settings.controllerHorizontalSpacing >= 0) "+${settings.controllerHorizontalSpacing}" else settings.controllerHorizontalSpacing} dp)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "Adjust controller height below options row (cannot overlap PAUSE/RESET buttons)",
+                                text = "Adjust gap between D-Pad and Action buttons (strictly bounded to prevent overlap)",
                                 fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Slider(
-                                value = settings.controllerVerticalOffset.coerceIn(-4, 20).toFloat(),
-                                onValueChange = { offsetVal ->
-                                    val newS = settings.copy(controllerVerticalOffset = offsetVal.roundToInt())
+                                value = settings.controllerHorizontalSpacing.coerceIn(-16, 16).toFloat(),
+                                onValueChange = { valSpac ->
+                                    val newS = settings.copy(controllerHorizontalSpacing = valSpac.roundToInt())
                                     settings = newS
                                     onSaveSettings(newS)
                                 },
-                                valueRange = -4f..20f,
-                                steps = 11,
+                                valueRange = -16f..16f,
+                                steps = 15,
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                listOf("Top (0)" to 0, "Mid (+6)" to 6, "Low (+12)" to 12, "Bottom (+18)" to 18).forEach { (label, offsetVal) ->
-                                    val isSelected = settings.controllerVerticalOffset == offsetVal
+                                listOf("Closer (-12)" to -12, "Normal (0)" to 0, "Farther (+12)" to 12).forEach { (label, spacVal) ->
+                                    val isSelected = settings.controllerHorizontalSpacing == spacVal
                                     OptionCapsule(
                                         text = label,
                                         isSelected = isSelected,
                                         onClick = {
-                                            val newS = settings.copy(controllerVerticalOffset = offsetVal)
+                                            val newS = settings.copy(controllerHorizontalSpacing = spacVal)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        height = 30.dp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 2. D-Pad Vertical Lift Regulator (Uplift / Downlift)
+                            Text(
+                                text = "D-Pad Vertical Position (${if (settings.dpadVerticalOffset >= 0) "+${settings.dpadVerticalOffset}" else settings.dpadVerticalOffset} dp)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Uplift or downlift D-Pad position independently within safe boundaries",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = settings.dpadVerticalOffset.coerceIn(-16, 16).toFloat(),
+                                onValueChange = { valLift ->
+                                    val newS = settings.copy(dpadVerticalOffset = valLift.roundToInt())
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                valueRange = -16f..16f,
+                                steps = 15,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf("Uplift (-12)" to -12, "Center (0)" to 0, "Downlift (+12)" to 12).forEach { (label, liftVal) ->
+                                    val isSelected = settings.dpadVerticalOffset == liftVal
+                                    OptionCapsule(
+                                        text = label,
+                                        isSelected = isSelected,
+                                        onClick = {
+                                            val newS = settings.copy(dpadVerticalOffset = liftVal)
+                                            settings = newS
+                                            onSaveSettings(newS)
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        height = 30.dp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 3. Action Buttons Vertical Lift Regulator (Uplift / Downlift)
+                            Text(
+                                text = "Action Buttons Vertical Position (${if (settings.actionButtonsVerticalOffset >= 0) "+${settings.actionButtonsVerticalOffset}" else settings.actionButtonsVerticalOffset} dp)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Uplift or downlift Action Buttons position independently within safe boundaries",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Slider(
+                                value = settings.actionButtonsVerticalOffset.coerceIn(-16, 16).toFloat(),
+                                onValueChange = { valLift ->
+                                    val newS = settings.copy(actionButtonsVerticalOffset = valLift.roundToInt())
+                                    settings = newS
+                                    onSaveSettings(newS)
+                                },
+                                valueRange = -16f..16f,
+                                steps = 15,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf("Uplift (-12)" to -12, "Center (0)" to 0, "Downlift (+12)" to 12).forEach { (label, liftVal) ->
+                                    val isSelected = settings.actionButtonsVerticalOffset == liftVal
+                                    OptionCapsule(
+                                        text = label,
+                                        isSelected = isSelected,
+                                        onClick = {
+                                            val newS = settings.copy(actionButtonsVerticalOffset = liftVal)
                                             settings = newS
                                             onSaveSettings(newS)
                                         },
@@ -568,15 +648,29 @@ fun SettingsScreen(
                             Text("Custom Button Positions (Remap Slots)", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            val slotLabels = when (settings.actionButtonLayout) {
-                                ActionButtonLayout.GRID_2X2 -> listOf("Top-Left (Slot 1)", "Top-Right (Slot 2)", "Bottom-Left (Slot 3)", "Bottom-Right (Slot 4)")
-                                ActionButtonLayout.DIAMOND -> listOf("Top (Slot 1)", "Right (Slot 2)", "Bottom (Slot 3)", "Left (Slot 4)")
-                                ActionButtonLayout.LINE_ROW -> listOf("Pos 1 (Left)", "Pos 2 (Mid-Left)", "Pos 3 (Mid-Right)", "Pos 4 (Right)")
+                            val slotInfo: List<Pair<String, Int>> = when (settings.actionButtonLayout) {
+                                ActionButtonLayout.GRID_2X2 -> listOf(
+                                    "Top-Left (Button 1)" to 0,
+                                    "Top-Right (Button 2)" to 1,
+                                    "Bottom-Left (Button 3)" to 2,
+                                    "Bottom-Right (Button 4)" to 3
+                                )
+                                ActionButtonLayout.DIAMOND -> listOf(
+                                    "Top (Button 1)" to 0,
+                                    "Left (Button 3)" to 2,
+                                    "Right (Button 2)" to 1
+                                )
+                                ActionButtonLayout.LINE_ROW -> listOf(
+                                    "Pos 1 (Button 1)" to 0,
+                                    "Pos 2 (Button 2)" to 1,
+                                    "Pos 3 (Button 3)" to 2,
+                                    "Pos 4 (Button 4)" to 3
+                                )
                             }
 
                             val currentActions = listOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
 
-                            slotLabels.forEachIndexed { index, slotName ->
+                            slotInfo.forEach { (slotName, btnIndex) ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -587,19 +681,19 @@ fun SettingsScreen(
                                     Text(slotName, fontSize = 11.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1.1f))
                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         ActionButtonType.values().forEach { action ->
-                                            val isSelected = currentActions[index] == action
+                                            val isSelected = currentActions[btnIndex] == action
                                             OptionCapsule(
                                                 text = action.shortLabel,
                                                 isSelected = isSelected,
                                                 onClick = {
                                                     val list = mutableListOf(settings.button1Action, settings.button2Action, settings.button3Action, settings.button4Action)
-                                                    val oldAction = list[index]
+                                                    val oldAction = list[btnIndex]
                                                     if (oldAction != action) {
                                                         val dupIdx = list.indexOf(action)
                                                         if (dupIdx != -1) {
                                                             list[dupIdx] = oldAction
                                                         }
-                                                        list[index] = action
+                                                        list[btnIndex] = action
                                                         val newS = settings.copy(
                                                             button1Action = list[0],
                                                             button2Action = list[1],
@@ -829,14 +923,15 @@ private fun OptionCapsule(
                 Text(
                     text = text,
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = contentColor,
                     maxLines = 1
                 )
                 Text(
                     text = subText,
                     fontSize = 8.sp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Normal,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f) else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
             }
@@ -844,7 +939,7 @@ private fun OptionCapsule(
             Text(
                 text = text,
                 fontSize = 10.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = FontWeight.SemiBold,
                 color = contentColor,
                 maxLines = 1
             )

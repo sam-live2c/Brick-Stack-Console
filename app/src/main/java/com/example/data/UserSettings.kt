@@ -55,6 +55,9 @@ data class UserSettings(
     val leftHandedMode: Boolean = false,
     val buttonScale: Float = 1.0f,
     val controllerVerticalOffset: Int = 0,
+    val dpadVerticalOffset: Int = 0,
+    val actionButtonsVerticalOffset: Int = 0,
+    val controllerHorizontalSpacing: Int = 0,
     val actionButtonLayout: ActionButtonLayout = ActionButtonLayout.GRID_2X2,
     val button1Action: ActionButtonType = ActionButtonType.HOLD,
     val button2Action: ActionButtonType = ActionButtonType.HARD_DROP,
@@ -95,6 +98,9 @@ class SettingsRepository(context: Context) {
             leftHandedMode = prefs.getBoolean("leftHandedMode", false),
             buttonScale = prefs.getFloat("buttonScale", 1.0f),
             controllerVerticalOffset = prefs.getInt("controllerVerticalOffset", 0),
+            dpadVerticalOffset = prefs.getInt("dpadVerticalOffset", prefs.getInt("controllerVerticalOffset", 0)),
+            actionButtonsVerticalOffset = prefs.getInt("actionButtonsVerticalOffset", prefs.getInt("controllerVerticalOffset", 0)),
+            controllerHorizontalSpacing = prefs.getInt("controllerHorizontalSpacing", 0),
             actionButtonLayout = try {
                 ActionButtonLayout.valueOf(prefs.getString("actionButtonLayout", ActionButtonLayout.GRID_2X2.name) ?: ActionButtonLayout.GRID_2X2.name)
             } catch (e: Exception) { ActionButtonLayout.GRID_2X2 },
@@ -132,6 +138,9 @@ class SettingsRepository(context: Context) {
             .putBoolean("leftHandedMode", settings.leftHandedMode)
             .putFloat("buttonScale", settings.buttonScale)
             .putInt("controllerVerticalOffset", settings.controllerVerticalOffset)
+            .putInt("dpadVerticalOffset", settings.dpadVerticalOffset)
+            .putInt("actionButtonsVerticalOffset", settings.actionButtonsVerticalOffset)
+            .putInt("controllerHorizontalSpacing", settings.controllerHorizontalSpacing)
             .putString("actionButtonLayout", settings.actionButtonLayout.name)
             .putString("button1Action", settings.button1Action.name)
             .putString("button2Action", settings.button2Action.name)
